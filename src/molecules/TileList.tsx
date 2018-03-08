@@ -7,7 +7,7 @@ type Props = {
   bgColour: string,
   fgColour: string,
   handleClick: (tile: BitsyTile) => void,
-  selectedTileId?: string,
+  selectedTileId?: number,
 };
 
 const TileList = (props: Props) => {

@@ -10,7 +10,7 @@ type Props = {
 };
 
 const CardContainer = withProps<{ width: number }>()(styled.div)`
-  width: ${(props) => props.width + 20}px;
+  min-width: ${(props) => props.width + 20}px;
   border-radius: 5px;
   background-color: ${colours.bg1};
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);

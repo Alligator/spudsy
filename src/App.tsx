@@ -3,9 +3,9 @@ import styled from 'styled-components';
 import ImageEditor from './atoms/ImageEdtior';
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
-import { Palette } from './types';
-import parseBitsy, { BitsyGame, BitsyTile } from './bitsy-parser';
+import parseBitsy, { BitsyGame, BitsyTile, BitsyThing, BitsyRoom, BitsyPalette } from './bitsy-parser';
 import TileList from './molecules/TileList';
+import RoomEditor from './molecules/RoomEditor';
 
 const VerticalContainer = styled.div`
   display: flex;
@@ -15,9 +15,9 @@ const VerticalContainer = styled.div`
 
 type Props = {};
 type State = {
-  palette: Palette,
   game: BitsyGame,
-  selectedTileId?: string,
+  selectedTileId?: number,
+  selectedRoomId?: number,
 };
 
 class App extends React.Component<Props, State> {
@@ -25,11 +25,6 @@ class App extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      palette: {
-        bg: '#000000',
-        tile: '#888888',
-        sprite: '#dddddd',
-      },
       game: {
         title: '',
         palettes: [],
@@ -52,41 +47,79 @@ class App extends React.Component<Props, State> {
     this.setState({ game: Object.assign({}, this.state.game, { tiles: newTiles }) });
   }
 
+  getCurrentPalette(): BitsyPalette | undefined {
+    const { game, selectedRoomId } = this.state;
+    const selectedRoom = typeof selectedRoomId  === 'number' ? this.findThing(selectedRoomId, game.rooms) : undefined;
+
+    if (selectedRoom) {
+      const palette = this.findThing((selectedRoom as BitsyRoom).paletteId, game.palettes);
+      if (palette) {
+        return palette as BitsyPalette;
+      }
+    } else if (game.palettes.length) {
+      return game.palettes[0];
+    }
+
+    return undefined;
+  }
+
+  findThing(id: number, things: Array<BitsyThing>): BitsyThing | undefined {
+    return things.filter(thing => thing.id === id)[0];
+  }
+
   render() {
-    const selectedTiles = this.state.game.tiles.filter((tile) => tile.id === this.state.selectedTileId);
-    const selectedTile = selectedTiles.length > 0 ? selectedTiles[0] : null;
+    const { game } = this.state;
+    // const selectedTiles = game.tiles.filter((tile) => tile.id === this.state.selectedTileId);
+    // const selectedTile = selectedTiles.length > 0 ? selectedTiles[0] : null;
+    const selectedTile = typeof this.state.selectedTileId === 'number'
+      ? this.findThing(this.state.selectedTileId, game.tiles)
+      : undefined;
+    const palette = this.getCurrentPalette();
     return (
       <div style={{ display: 'flex', alignItems: 'flex-start' }}>
         <VerticalContainer>
+          <Card title="Room" width={512}>
+            {palette &&
+            <RoomEditor
+              rooms={game.rooms}
+              size={512}
+              selectedRoomId={this.state.selectedRoomId}
+              handleSelectRoom={(room) => { this.setState({ selectedRoomId: room.id }); }}
+              palette={palette}
+              tiles={game.tiles}
+            />}
+          </Card>
+        </VerticalContainer>
+
+        <VerticalContainer>
           <Card title="Draw" width={256}>
-            {selectedTile ?
+            {palette && selectedTile ?
             <ImageEditor
-              width={256}
-              height={256}
+              size={256}
               tileCount={8}
-              bgColour={this.state.palette.bg}
-              fgColour={this.state.palette.tile}
-              tile={selectedTile}
+              bgColour={palette.bg}
+              fgColour={palette.tile}
+              tile={selectedTile as BitsyTile}
               handleChange={this.handleTileChange}
             /> : <div>There is no tile selected!</div>}
           </Card>
           <Card title="Palette" width={256}>
             <PaletteEditor
-              palettes={this.state.game.palettes}
+              palettes={game.palettes}
               handleChange={() => null}
-              // handleChange={(palette) => { this.setState({ palette }); }}
             />
           </Card>
         </VerticalContainer>
 
         <Card title="Tiles" width={256}>
+          {palette &&
           <TileList
-            tiles={this.state.game.tiles}
-            bgColour={this.state.palette.bg}
-            fgColour={this.state.palette.tile}
+            tiles={game.tiles}
+            bgColour={palette.bg}
+            fgColour={palette.tile}
             selectedTileId={this.state.selectedTileId}
             handleClick={(tile) => { this.setState({ selectedTileId: tile.id }); }}
-          />
+          />}
         </Card>
 
         <Card title="Game Data" width={256}>
@@ -94,7 +127,10 @@ class App extends React.Component<Props, State> {
             style={{ width: '100%', height: '256px' }}
             onChange={(evt) => {
               const data = evt.target.value;
-              this.setState({ game: parseBitsy(data) });
+              const parsedGame = parseBitsy(data);
+              // tslint:disable-next-line:no-console
+              console.log(parsedGame);
+              this.setState({ game: parsedGame });
             }}
           />
         </Card>

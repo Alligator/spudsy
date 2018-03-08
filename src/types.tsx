@@ -6,12 +6,6 @@ export type Cell = {
   color: string,
 };
 
-export type Palette = {
-  bg: string,
-  tile: string,
-  sprite: string,
-};
-
 // https://github.com/styled-components/styled-components/issues/630
 export function withProps<U>() {
   return <P, T, O>(

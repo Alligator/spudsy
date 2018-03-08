@@ -14,10 +14,6 @@ const ListItem = withProps<Props>()(styled.div)`
   min-height: 32px;
   margin-bottom: 10px;
 
-  &:last-child {
-    margin-bottom: 0;
-  }
-
   &:hover {
     font-weight: bold;
   }

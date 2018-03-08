@@ -4,8 +4,7 @@ import * as colours from '../colours';
 import { BitsyTile } from '../bitsy-parser';
 
 type Props = {
-  width: number,
-  height: number,
+  size: number,
   tileCount: number,
   bgColour: string,
   fgColour: string,
@@ -28,8 +27,6 @@ class ImageEditor extends React.PureComponent<Props, State> {
   };
 
   canvas: HTMLCanvasElement;
-  cellWidth: number;
-  cellHeight: number;
 
   constructor(props: Props) {
     super(props);
@@ -41,9 +38,6 @@ class ImageEditor extends React.PureComponent<Props, State> {
       mouseCellX: 0,
       mouseCellY: 0,
     };
-
-    this.cellWidth = props.width / props.tileCount;
-    this.cellHeight = props.height / props.tileCount;
 
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -63,6 +57,10 @@ class ImageEditor extends React.PureComponent<Props, State> {
   componentDidUpdate() {
     this.updateCanvas();
   }
+  
+  get cellSize() {
+    return this.props.size / this.props.tileCount;
+  }
 
   updateCanvas() {
     const { tileCount } = this.props;
@@ -81,7 +79,7 @@ class ImageEditor extends React.PureComponent<Props, State> {
 
     // clear the canvas
     ctx.fillStyle = this.props.bgColour;
-    ctx.fillRect(0, 0, this.props.width, this.props.height);
+    ctx.fillRect(0, 0, this.props.size, this.props.size);
 
     // draw the filled cells
     ctx.fillStyle = this.props.fgColour;
@@ -89,7 +87,7 @@ class ImageEditor extends React.PureComponent<Props, State> {
       for (let y = 0; y < tileCount; y++) {
         const cell = this.state.cells[x + y * tileCount];
         if (cell) {
-          ctx.fillRect(x * this.cellWidth, y * this.cellHeight, this.cellWidth, this.cellHeight);
+          ctx.fillRect(x * this.cellSize, y * this.cellSize, this.cellSize, this.cellSize);
         }
       }
     }
@@ -100,13 +98,13 @@ class ImageEditor extends React.PureComponent<Props, State> {
     ctx.strokeStyle = tinycolor(this.props.bgColour).isDark() ? colours.bg2 : colours.fg2;
     ctx.beginPath();
     for (let x = 1; x < tileCount; x++) {
-      ctx.moveTo(x * this.cellWidth, 0);
-      ctx.lineTo(x * this.cellWidth, this.props.width);
+      ctx.moveTo(x * this.cellSize, 0);
+      ctx.lineTo(x * this.cellSize, this.props.size);
     }
 
     for (let y = 1; y < tileCount; y++) {
-      ctx.moveTo(0, y * this.cellHeight);
-      ctx.lineTo(this.props.height, y * this.cellHeight);
+      ctx.moveTo(0, y * this.cellSize);
+      ctx.lineTo(this.props.size, y * this.cellSize);
     }
     ctx.stroke();
 
@@ -114,8 +112,8 @@ class ImageEditor extends React.PureComponent<Props, State> {
   }
 
   getCellCoordsFromPixel(x: number, y: number) {
-    const cellX = Math.floor(x / this.cellWidth);
-    const cellY = Math.floor(y / this.cellHeight);
+    const cellX = Math.floor(x / this.cellSize);
+    const cellY = Math.floor(y / this.cellSize);
     return { x: cellX, y: cellY };
   }
 
@@ -164,12 +162,12 @@ class ImageEditor extends React.PureComponent<Props, State> {
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
         onMouseMove={this.handleMouseMove}
-        style={{ border: '1px solid black', width: this.props.width, height: this.props.height }}
+        style={{ border: '1px solid black', width: this.props.size, height: this.props.size }}
       >
         <canvas
           ref={(ref: HTMLCanvasElement) => { this.canvas = ref; }}
-          width={this.props.width}
-          height={this.props.height}
+          width={this.props.size}
+          height={this.props.size}
         />
       </div>
     );

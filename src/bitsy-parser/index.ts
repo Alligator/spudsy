@@ -1,41 +1,46 @@
-export type BitsyGame = {
-  title: string,
-  palettes: Array<BitsyPalette>,
-  rooms: Array<BitsyRoom>,
-  tiles: Array<BitsyTile>,
-};
+export interface BitsyGame {
+  title: string;
+  palettes: Array<BitsyPalette>;
+  rooms: Array<BitsyRoom>;
+  tiles: Array<BitsyTile>;
+}
 
-export type BitsyPalette = {
-  id: number,
-  name: string,
-  bg: string,
-  tile: string,
-  sprite: string,
-};
+export interface BitsyThing {
+  id: number;
+  name: string;
+}
 
-export type BitsyRoom = {
-  id: number,
-  name: string,
-  tiles: Array<string>,
-  exits: Array<BitsyExit>,
-  items: Array<{ id: number, x: number, y: number }>,
-  paletteId: number,
-};
+export interface BitsyPalette extends BitsyThing {
+  id: number;
+  name: string;
+  bg: string;
+  tile: string;
+  sprite: string;
+}
 
-export type BitsyExit = {
-  fromX: number,
-  fromY: number,
-  toRoom: number,
-  toX: number,
-  toY: number,
-};
+export interface BitsyRoom extends BitsyThing {
+  id: number;
+  name: string;
+  tiles: Array<number>;
+  exits: Array<BitsyExit>;
+  items: Array<{ id: number; x: number, y: number }>;
+  paletteId: number;
+}
 
-export type BitsyTile = {
-  id: string,
-  name: string,
-  pixels: Array<boolean>,
-  wall: boolean,
-};
+export interface BitsyExit {
+  fromX: number;
+  fromY: number;
+  toRoom: number;
+  toX: number;
+  toY: number;
+}
+
+export interface BitsyTile extends BitsyThing {
+  id: number;
+  name: string;
+  pixels: Array<boolean>;
+  wall: boolean;
+}
 
 type ParseResult = {
   game: BitsyGame,
@@ -46,7 +51,11 @@ type ParseResult = {
 function getId(line: string) {
   const args = line.split(' ');
   const last = args[args.length - 1];
-  return parseInt(last, 10);
+  return parseInt(last, 36);
+}
+
+function getName(line: string) {
+  return line.substr(line.indexOf(' ')).trim();
 }
 
 function parseTitle(game: BitsyGame, input: Array<string>): ParseResult {
@@ -69,7 +78,7 @@ function parsePal(game: BitsyGame, input: Array<string>): ParseResult {
   let lines = input.slice(1);
 
   if (lines[0].startsWith('NAME')) {
-    palette.name = lines[0].split(' ', 1)[1];
+    palette.name = getName(lines[0]);
     lines = lines.splice(1);
   }
 
@@ -101,7 +110,7 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
 
   for (let i = 0; i < 16; i++) {
     const lime = lines[i];
-    const ids = lime.split(',');
+    const ids = lime.split(',').map(item => parseInt(item, 36));
     room.tiles = [...room.tiles, ...ids];
   }
 
@@ -109,6 +118,17 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
 
   let line = lines[0];
   while (line.length > 0) {
+    switch (line.split(' ')[0]) {
+      case 'NAME': {
+        room.name = getName(line);
+        break;
+      }
+      case 'PAL': {
+        room.paletteId = getId(line);
+        break;
+      }
+      default: break;
+    }
     lines = lines.slice(1);
     line = lines[0];
   }
@@ -121,7 +141,7 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
 
 function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
   let tile: BitsyTile = {
-    id: input[0].split(' ')[1],
+    id: getId(input[0]),
     name: '',
     pixels: [],
     wall: false,
@@ -141,7 +161,7 @@ function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
 
     switch (cmd) {
       case 'NAME': {
-        tile.name = line.substr(line.indexOf(' ')).trim();
+        tile.name = getName(line);
         break;
       }
       default: break;
