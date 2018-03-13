@@ -1,3 +1,5 @@
+import serializeBitsy from './serialize';
+
 export interface BitsyGame {
   title: string;
   palettes: Array<BitsyPalette>;
@@ -246,4 +248,7 @@ function parseBitsy(input: string): BitsyGame {
   return game;
 }
 
-export default parseBitsy;
+export {
+  parseBitsy as default,
+  serializeBitsy,
+};

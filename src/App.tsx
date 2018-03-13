@@ -1,9 +1,9 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import ImageEditor from './atoms/ImageEdtior';
+import TileEditor from './atoms/TileEditor';
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
-import parseBitsy, { BitsyGame, BitsyTile, BitsyThing, BitsyRoom, BitsyPalette } from './bitsy-parser';
+import parseBitsy, { BitsyGame, BitsyTile, BitsyThing, BitsyRoom, BitsyPalette, serializeBitsy } from './bitsy-parser';
 import TileList from './molecules/TileList';
 import RoomEditor from './molecules/RoomEditor';
 
@@ -18,6 +18,7 @@ type State = {
   game: BitsyGame,
   selectedTileId?: number,
   selectedRoomId?: number,
+  rawGameData: string,
 };
 
 class App extends React.Component<Props, State> {
@@ -31,9 +32,19 @@ class App extends React.Component<Props, State> {
         rooms: [],
         tiles: [],
       },
+      rawGameData: '',
     };
 
     this.handleTileChange = this.handleTileChange.bind(this);
+    this.handleEditRoom = this.handleEditRoom.bind(this);
+    this.handleEditGameData = this.handleEditGameData.bind(this);
+  }
+
+  componentDidMount() {
+    const gameData = localStorage.getItem('bitsyGame');
+    if (gameData) {
+      this.parseGame(gameData);
+    }
   }
 
   handleTileChange(newTile: BitsyTile) {
@@ -45,6 +56,31 @@ class App extends React.Component<Props, State> {
     });
 
     this.setState({ game: Object.assign({}, this.state.game, { tiles: newTiles }) });
+  }
+
+  handleEditRoom(newRoom: BitsyRoom) {
+    const newRooms = this.state.game.rooms.map((room) => {
+      if (room.id === this.state.selectedRoomId) {
+        return newRoom;
+      }
+      return room;
+    });
+
+    this.setState({ game: Object.assign({}, this.state.game, { rooms: newRooms }) });
+  }
+
+  handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
+    const data = evt.target.value;
+    localStorage.setItem('bitsyGame', data);
+    this.parseGame(data);
+  }
+
+  parseGame(rawData: string) {
+    const parsedGame = parseBitsy(rawData);
+    this.setState({
+      game: parsedGame,
+      rawGameData: rawData,
+    });
   }
 
   getCurrentPalette(): BitsyPalette | undefined {
@@ -87,6 +123,9 @@ class App extends React.Component<Props, State> {
               handleSelectRoom={(room) => { this.setState({ selectedRoomId: room.id }); }}
               palette={palette}
               tiles={game.tiles}
+              selectedTile={selectedTile as BitsyTile}
+              handleEditRoom={this.handleEditRoom}
+              handleSelectTile={(tile) => { this.setState({ selectedTileId: tile.id }); }}
             />}
           </Card>
         </VerticalContainer>
@@ -94,7 +133,7 @@ class App extends React.Component<Props, State> {
         <VerticalContainer>
           <Card title="Draw" width={256}>
             {palette && selectedTile ?
-            <ImageEditor
+            <TileEditor
               size={256}
               tileCount={8}
               bgColour={palette.bg}
@@ -125,14 +164,18 @@ class App extends React.Component<Props, State> {
         <Card title="Game Data" width={256}>
           <textarea
             style={{ width: '100%', height: '256px' }}
-            onChange={(evt) => {
-              const data = evt.target.value;
-              const parsedGame = parseBitsy(data);
-              // tslint:disable-next-line:no-console
-              console.log(parsedGame);
-              this.setState({ game: parsedGame });
-            }}
+            value={this.state.rawGameData}
+            onChange={this.handleEditGameData}
           />
+          <button
+            type="button"
+            onClick={() => {
+              // tslint:disable-next-line:no-console
+              console.log(serializeBitsy(this.state.game).join('\n'));
+            }}
+          >
+            serialize
+          </button>
         </Card>
       </div>
     );

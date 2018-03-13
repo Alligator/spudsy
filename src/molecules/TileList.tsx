@@ -2,6 +2,10 @@ import * as React from 'react';
 import { BitsyTile } from '../bitsy-parser';
 import Tile from '../atoms/Tile';
 import ListItem from '../atoms/ListItem';
+import Filterable from '../atoms/Filterable';
+
+class TileFilterable extends Filterable<BitsyTile> {}
+
 type Props = {
   tiles: Array<BitsyTile>,
   bgColour: string,
@@ -26,21 +30,25 @@ const TileList = (props: Props) => {
         overflowY: 'auto',
       }}
     >
-      {sortedTiles.map((tile: BitsyTile) => (
-        <ListItem
-          key={tile.id}
-          onClick={() => { props.handleClick(tile); }}
-          selected={props.selectedTileId === tile.id}
-        >
-          <Tile
-            tile={tile}
-            scale={4}
-            bgColour={props.bgColour}
-            fgColour={props.fgColour}
-          />
-          <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
-        </ListItem>
-      ))}
+      <TileFilterable
+        items={sortedTiles}
+        getKey={tile => `${tile.id} - ${tile.name}`}
+        render={tiles => tiles.map((tile) => (
+          <ListItem
+            key={tile.id}
+            onClick={() => { props.handleClick(tile); }}
+            selected={props.selectedTileId === tile.id}
+          >
+            <Tile
+              tile={tile}
+              scale={4}
+              bgColour={props.bgColour}
+              fgColour={props.fgColour}
+            />
+            <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
+          </ListItem>
+        ))}
+      />
     </div>
   );
 };
