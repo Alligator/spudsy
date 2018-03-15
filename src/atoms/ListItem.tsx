@@ -17,6 +17,10 @@ const ListItem = withProps<Props>()(styled.div)`
   &:hover {
     font-weight: bold;
   }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 export default ListItem;

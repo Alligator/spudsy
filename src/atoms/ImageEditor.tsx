@@ -2,9 +2,9 @@ import * as React from 'react';
 import * as colours from '../colours';
 import * as tinycolor from 'tinycolor2';
 import RadioGroup from './RadioGroup';
+import { uniqueId } from 'lodash';
 
 type Props = {
-  id: number, // purely to cause re-rendering
   size: number,
   tileCount: number,
   bgColour: string,
@@ -173,7 +173,10 @@ class ImageEditor extends React.Component<Props, State> {
         onMouseDown={this.handleMouseDown}
         onMouseUp={this.handleMouseUp}
         onMouseMove={this.handleMouseMove}
-        style={{ width: this.props.size, cursor: this.state.mode === 'edit' ? 'pointer' : 'help' }}
+        style={{
+          width: this.props.size,
+          cursor: this.state.mode === 'edit' ? 'pointer' : 'help'
+        }}
       >
         <canvas
           ref={(ref: HTMLCanvasElement) => { this.canvas = ref; }}
@@ -192,7 +195,7 @@ class ImageEditor extends React.Component<Props, State> {
                 value: 'inspect',
               },
             ]}
-            name={`${this.props.id}-controls`}
+            name={uniqueId()}
             defaultSelected="edit"
             handleSelect={this.handleModeChange}
           />}

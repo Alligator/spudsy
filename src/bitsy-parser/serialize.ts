@@ -55,8 +55,9 @@ function serializeTiles(game: BitsyGame): Array<string> {
     const tile = game.tiles[i];
     output.push(`TIL ${id(tile.id)}`);
 
+    // TODO: support multiple frames
     for (let y = 0; y < 8; y++) {
-      const pixels = tile.pixels.slice(y * 8, y * 8 + 8);
+      const pixels = tile.frames[0].slice(y * 8, y * 8 + 8);
       output.push(pixels.map(p => p ? '1' : '0').join(''));
     }
 

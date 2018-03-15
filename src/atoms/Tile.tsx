@@ -1,8 +1,9 @@
 import * as React from 'react';
-import { BitsyTile } from '../bitsy-parser';
+import { BitsyDrawable } from '../bitsy-parser';
 
 type Props = {
-  tile: BitsyTile,
+  tile: BitsyDrawable,
+  frame: number,
   scale: number,
   bgColour: string,
   fgColour: string,
@@ -21,10 +22,10 @@ const Tile = (props: Props) => {
       ctx.fillStyle = props.bgColour;
       ctx.fillRect(0, 0, size, size);
 
-      for (let i = 0; i < props.tile.pixels.length; i++) {
+      for (let i = 0; i < props.tile.frames[props.frame].length; i++) {
         const x = i % 8;
         const y = Math.floor(i / 8);
-        const color = props.tile.pixels[i] ? props.fgColour : props.bgColour;
+        const color = props.tile.frames[props.frame][i] ? props.fgColour : props.bgColour;
         ctx.fillStyle = color;
         ctx.fillRect(x * props.scale, y * props.scale, props.scale, props.scale);
       }

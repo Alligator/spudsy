@@ -8,6 +8,8 @@ const FilterInput = styled.input`
   background-color: ${colours.bg2};
   color: ${colours.fg};
   min-height: 32px;
+  max-height: 32px;
+  box-sizing: border-box;
   margin-bottom: 10px;
   padding: 0 0 0 10px;
   border: 2px solid ${colours.fg2};

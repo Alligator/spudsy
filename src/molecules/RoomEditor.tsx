@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { BitsyRoom, BitsyTile, BitsyPalette } from '../bitsy-parser';
+import { BitsyRoom, BitsyTile, BitsyPalette, BitsySprite, BitsyDrawable } from '../bitsy-parser';
 import ListItem from '../atoms/ListItem';
 import Filterable from '../atoms/Filterable';
 import ImageEditor from '../atoms/ImageEditor';
@@ -10,6 +10,7 @@ type Props = {
   selectedRoomId?: number,
   rooms: Array<BitsyRoom>,
   tiles: Array<BitsyTile>,
+  sprites: Array<BitsySprite>,
   selectedTile: BitsyTile,
   palette: BitsyPalette,
   size: number,
@@ -59,11 +60,47 @@ class RoomEditor extends React.PureComponent<Props, State> {
   }
 
   handleEdit(x: number, y: number) {
+    /*
+    TODO: rewrite this entire function to make sense
+
+    This needs to handle these cases:
+
+    - Clicking on an empty cell with a tile selected.
+      Start drawing that tile at the cell.
+
+    - Clicking on an empty cell with a sprite selected.
+    - Clicking on a cell containing a tile with a sprite selected.
+      Move that sprite to the cell.
+
+    - Clicking on a cell containing a tile with a tile selected.
+      Start removing tiles at the cell.
+
+    - Clicking on a cell containing a sprite with a sprite selected.
+      Remove that sprite from that cell.
+
+    - Clicking on a cell containing a sprite with a tile selected
+      Ignore the sprite, do the above behaviour depending on if there's a tile there or not.
+    */
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     if (selectedRoom) {
-      const newTiles = selectedRoom.tiles.slice();
-      newTiles[x + y * 16] = this.state.addingTiles ? this.props.selectedTile.id : 0;
-      this.props.handleEditRoom(Object.assign({}, selectedRoom, { tiles: newTiles }));
+      const foundTile = this.getTileAtCoords(x, y);
+      const foundSprite = this.getSpriteAtCoords(x, y);
+
+      if (foundTile) {
+        const newTiles = selectedRoom.tiles.slice();
+        newTiles[x + y * 16] = this.state.addingTiles ? this.props.selectedTile.id : 0;
+        this.props.handleEditRoom(Object.assign({}, selectedRoom, { tiles: newTiles }));
+      } else if (foundSprite) {
+        const newSprite = Object.assign(
+          {},
+          foundSprite,
+          {
+            pos: { roomId: this.props.selectedRoomId, x, y }
+          },
+        );
+        const newSprites = this.props.sprites.map(sprite => sprite.id === foundSprite.id ? newSprite : sprite);
+        this.props.handleEditRoom(Object.assign({}, selectedRoom, { sprites: newSprites }));
+      }
     }
   }
 
@@ -83,6 +120,16 @@ class RoomEditor extends React.PureComponent<Props, State> {
     return null;
   }
 
+  getSpriteAtCoords(x: number, y: number): BitsySprite | null {
+    const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
+    if (selectedRoom) {
+      const sprites = this.props.sprites.filter(sprite =>
+        sprite.pos && (sprite.pos.x === x && sprite.pos.y === y));
+      return sprites[0];
+    }
+    return null;
+  }
+
   getCellInfo(x: number, y: number): React.ReactNode {
     const currentTile = this.getTileAtCoords(x, y);
     if (currentTile) {
@@ -97,12 +144,16 @@ class RoomEditor extends React.PureComponent<Props, State> {
     }
 
     const currentTile = this.getTileAtCoords(x, y);
+    const sprite = this.getSpriteAtCoords(x, y);
 
-    if (currentTile) {
-      ctx.fillStyle = this.props.palette.tile;
+    if (currentTile || sprite) {
       for (let ix = 0; ix < 8; ix++) {
         for (let iy = 0; iy < 8; iy++) {
-          if (currentTile.pixels[ix + iy * 8]) {
+          // TODO: multiple frames!!!
+          const thing = (sprite ? sprite : currentTile) as BitsyDrawable;
+          const hasPixel = thing.frames[0][ix + iy * 8];
+          ctx.fillStyle = sprite ? this.props.palette.sprite : this.props.palette.tile;
+          if (hasPixel) {
             ctx.fillRect(
               x * this.cellSize + ix * this.innerCellSize,
               y * this.cellSize + iy * this.innerCellSize,
@@ -121,7 +172,6 @@ class RoomEditor extends React.PureComponent<Props, State> {
 
         <ImageEditor
           size={this.props.size}
-          id={this.props.selectedRoomId || 0}
           tileCount={16}
           bgColour={this.props.palette.bg}
           fgColour={this.props.palette.tile}
@@ -148,7 +198,11 @@ class RoomEditor extends React.PureComponent<Props, State> {
             render={rooms => rooms.map((room: BitsyRoom) => (
               <ListItem
                 key={room.id}
-                selected={this.props.selectedRoomId ? (this.props.selectedRoomId === room.id) : false}
+                selected={
+                  typeof this.props.selectedRoomId === 'number'
+                    ? (this.props.selectedRoomId === room.id)
+                    : false
+                }
                 style={{ paddingLeft: '10px' }}
                 onClick={this.props.handleSelectRoom.bind(this, room)}
               >

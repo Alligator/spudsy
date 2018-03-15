@@ -1,21 +1,21 @@
 import * as React from 'react';
-import { BitsyTile } from '../bitsy-parser';
+import { BitsyDrawable } from '../bitsy-parser';
 import Tile from '../atoms/Tile';
 import ListItem from '../atoms/ListItem';
 import Filterable from '../atoms/Filterable';
 
-class TileFilterable extends Filterable<BitsyTile> {}
+class TileFilterable extends Filterable<BitsyDrawable> {}
 
 type Props = {
-  tiles: Array<BitsyTile>,
-  bgColour: string,
+  items: Array<BitsyDrawable>,
   fgColour: string,
-  handleClick: (tile: BitsyTile) => void,
-  selectedTileId?: number,
+  bgColour: string,
+  handleClick: (tile: BitsyDrawable) => void,
+  selectedId?: number,
 };
 
 const TileList = (props: Props) => {
-  const sortedTiles = props.tiles.slice().sort((a, b) => {
+  const sortedTiles = props.items.slice().sort((a, b) => {
     const aName = `${a.id} - ${a.name}`;
     const bName = `${b.id} - ${b.name}`;
     return aName.toLowerCase().localeCompare(bName.toLowerCase());
@@ -24,7 +24,7 @@ const TileList = (props: Props) => {
   return (
     <div
       style={{
-        height: '410px',
+        height: '288px',
         display: 'flex',
         flexDirection: 'column',
         overflowY: 'auto',
@@ -37,13 +37,14 @@ const TileList = (props: Props) => {
           <ListItem
             key={tile.id}
             onClick={() => { props.handleClick(tile); }}
-            selected={props.selectedTileId === tile.id}
+            selected={props.selectedId === tile.id}
           >
             <Tile
               tile={tile}
               scale={4}
               bgColour={props.bgColour}
               fgColour={props.fgColour}
+              frame={0}
             />
             <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
           </ListItem>
