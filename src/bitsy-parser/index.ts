@@ -1,11 +1,23 @@
 import serializeBitsy from './serialize';
 
+function assert(invariant: boolean, msg: string) {
+  if (!invariant) {
+    throw new Error(msg);
+  }
+}
+
 export interface BitsyGame {
   title: string;
   palettes: Array<BitsyPalette>;
   rooms: Array<BitsyRoom>;
   tiles: Array<BitsyTile>;
   sprites: Array<BitsySprite>;
+  startingItems: Array<BitsyVariables>;
+  variables: BitsyVariables;
+}
+
+export interface BitsyVariables {
+  [name: string]: number;
 }
 
 export interface BitsyThing {
@@ -23,6 +35,7 @@ export interface BitsyRoom extends BitsyThing {
   tiles: Array<number>;
   exits: Array<BitsyExit>;
   items: Array<{ id: number; x: number, y: number }>;
+  endings: Array<BitsyPosition>;
   paletteId: number;
 }
 
@@ -49,47 +62,56 @@ export interface BitsySprite extends BitsyThing, BitsyDrawable {
   dialogId?: string;
 }
 
+export interface BitsyItem extends BitsyThing {
+  frames: Array<Array<boolean>>;
+  dialogId?: string;
+}
+
+export interface BitsyDialog {
+  id: string;
+  content: string;
+}
+
 export interface BitsyPosition {
-  roomId: number;
+  id: number;
   x: number;
   y: number;
 }
 
-type ParseResult = {
-  game: BitsyGame,
-  lines: Array<string>,
-  error?: string,
-};
-
-function getId(line: string): number {
-  const args = line.split(' ');
-  const last = args[args.length - 1];
-  return parseInt(last, 36);
-}
-
-function getName(line: string): string {
+function getArg(line: string): string {
   return line.substr(line.indexOf(' ')).trim();
 }
 
+function getId(line: string): number {
+  return parseInt(getArg(line), 36);
+}
+
 function getPos(line: string): BitsyPosition {
-  const [, roomId, x, y] = line.split(/ |,/);
+  const [, id, x, y] = line.split(/ |,/);
   return {
-    roomId: parseInt(roomId, 10),
+    id: parseInt(id, 10),
     x: parseInt(x, 10),
     y: parseInt(y, 10),
   };
 }
 
-function parseTitle(game: BitsyGame, input: Array<string>): ParseResult {
-  const title = input[0];
-  const newGame = Object.assign({}, game, { title });
+function getExit(line: string): BitsyExit {
+  const [fromX, fromY, toRoom, toX, toY] = line.split(/ |,/).slice(1).map(x => parseInt(x, 10));
   return {
-    game: newGame,
-    lines: input.slice(1),
+    fromX,
+    fromY,
+    toRoom,
+    toX,
+    toY,
   };
 }
 
-function parsePal(game: BitsyGame, input: Array<string>): ParseResult {
+function parseTitle(game: BitsyGame, input: Array<string>): Array<string> {
+  game.title = input[0];
+  return input.slice(1);
+}
+
+function parsePal(game: BitsyGame, input: Array<string>): Array<string> {
   const palette: BitsyPalette = {
     id: getId(input[0]),
     name: '',
@@ -100,7 +122,7 @@ function parsePal(game: BitsyGame, input: Array<string>): ParseResult {
   let lines = input.slice(1);
 
   if (lines[0].startsWith('NAME')) {
-    palette.name = getName(lines[0]);
+    palette.name = getArg(lines[0]);
     lines = lines.slice(1);
   }
 
@@ -113,13 +135,11 @@ function parsePal(game: BitsyGame, input: Array<string>): ParseResult {
   palette.tile = parseCol(lines[1]);
   palette.sprite = parseCol(lines[2]);
 
-  return {
-    lines: lines.slice(3),
-    game: Object.assign({}, game, { palettes: [...game.palettes, palette] }),
-  };
+  game.palettes.push(palette);
+  return lines.slice(3);
 }
 
-function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
+function parseRoom(game: BitsyGame, input: Array<string>): Array<string> {
   const room: BitsyRoom = {
     id: getId(input[0]),
     name: '',
@@ -127,13 +147,14 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
     tiles: [],
     items: [],
     exits: [],
+    endings: [],
   };
   let lines = input.slice(1);
 
   for (let i = 0; i < 16; i++) {
     const lime = lines[i];
     const ids = lime.split(',').map(item => parseInt(item, 36));
-    room.tiles = [...room.tiles, ...ids];
+    room.tiles = room.tiles.concat(ids);
   }
 
   lines = lines.slice(16);
@@ -142,11 +163,23 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
   while (line.length > 0) {
     switch (line.split(' ')[0]) {
       case 'NAME': {
-        room.name = getName(line);
+        room.name = getArg(line);
         break;
       }
       case 'PAL': {
         room.paletteId = getId(line);
+        break;
+      }
+      case 'ITM': {
+        room.items.push(getPos(line));
+        break;
+      }
+      case 'EXT': {
+        room.exits.push(getExit(line));
+        break;
+      }
+      case 'END': {
+        room.endings.push(getPos(line));
         break;
       }
       default: break;
@@ -155,13 +188,11 @@ function parseRoom(game: BitsyGame, input: Array<string>): ParseResult {
     line = lines[0];
   }
 
-  return {
-    lines,
-    game: Object.assign({}, game, { rooms: [...game.rooms, room] }),
-  };
+  game.rooms.push(room);
+  return lines;
 }
 
-function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
+function parseTile(game: BitsyGame, input: Array<string>): Array<string> {
   let tile: BitsyTile = {
     id: getId(input[0]),
     name: '',
@@ -175,7 +206,7 @@ function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
     let frame: Array<boolean> = [];
     for (let i = 0; i < 8; i++) {
       const l = lines[i].split('').map((s) => s === '1');
-      frame = [...frame, ...l];
+      frame = frame.concat(l);
     }
 
     tile.frames.push(frame);
@@ -193,7 +224,13 @@ function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
 
     switch (cmd) {
       case 'NAME': {
-        tile.name = getName(line);
+        tile.name = getArg(line);
+        break;
+      }
+      case 'WAL': {
+        if (getArg(line) === 'true') {
+          tile.wall = true;
+        }
         break;
       }
       default: break;
@@ -202,13 +239,11 @@ function parseTile(game: BitsyGame, input: Array<string>): ParseResult {
     line = lines[0];
   }
 
-  return {
-    lines,
-    game: Object.assign({}, game, { tiles: [...game.tiles, tile] }),
-  };
+  game.tiles.push(tile);
+  return lines;
 }
 
-function parseSprite(game: BitsyGame, input: Array<string>): ParseResult {
+function parseSprite(game: BitsyGame, input: Array<string>): Array<string> {
   let sprite: BitsySprite = {
     id: getId(input[0]),
     name: '',
@@ -216,7 +251,7 @@ function parseSprite(game: BitsyGame, input: Array<string>): ParseResult {
     isPlayer: false,
   };
 
-  if (getName(input[0]) === 'A') {
+  if (getArg(input[0]) === 'A') {
     sprite.isPlayer = true;
     sprite.id = -1;
   }
@@ -245,7 +280,7 @@ function parseSprite(game: BitsyGame, input: Array<string>): ParseResult {
 
     switch (cmd) {
       case 'NAME': {
-        sprite.name = getName(line);
+        sprite.name = getArg(line);
         break;
       }
       case 'POS': {
@@ -253,7 +288,13 @@ function parseSprite(game: BitsyGame, input: Array<string>): ParseResult {
         break;
       }
       case 'DLG': {
-        sprite.dialogId = getName(line);
+        sprite.dialogId = getArg(line);
+        break;
+      }
+      case 'ITM': {
+        assert(sprite.isPlayer, 'found an item on a non player sprite!!');
+        const [itemId, count] = getArg(line).split(' ').map(x => parseInt(x, 10));
+        game.startingItems.push({ [itemId]: count });
         break;
       }
       default: break;
@@ -262,10 +303,19 @@ function parseSprite(game: BitsyGame, input: Array<string>): ParseResult {
     line = lines[0];
   }
 
-  return {
-    lines,
-    game: Object.assign({}, game, { sprites: [...game.sprites, sprite] }),
-  };
+  game.sprites.push(sprite);
+  return lines;
+}
+
+function parseVar(game: BitsyGame, input: Array<string>): Array<string> {
+  const name = getArg(input[0]);
+  let lines = input.slice(1);
+
+  const value = parseInt(lines[0], 10);
+  lines = lines.slice(1);
+
+  game.variables[name] = value;
+  return lines;
 }
 
 function parseBitsy(input: string): BitsyGame {
@@ -275,16 +325,12 @@ function parseBitsy(input: string): BitsyGame {
     rooms: [],
     tiles: [],
     sprites: [],
+    startingItems: [],
+    variables: {},
   };
   let lines = input.split('\n');
 
-  const result = parseTitle(game, lines);
-  if (result.error) {
-    throw new Error('error parsing title');
-  } else {
-    game = result.game;
-    lines = result.lines;
-  }
+  lines = parseTitle(game, lines);
 
   while (lines.length > 0) {
     const line = lines[0];
@@ -298,49 +344,25 @@ function parseBitsy(input: string): BitsyGame {
     const cmd = line.split(' ')[0];
     switch (cmd) {
       case 'PAL': {
-        const palResult = parsePal(game, lines);
-        if (palResult.error) {
-          throw new Error('error parsing pal');
-        } else {
-          game = palResult.game;
-          lines = palResult.lines;
-        }
+        lines = parsePal(game, lines);
         break;
       }
-
       case 'ROOM': {
-        const roomResult = parseRoom(game, lines);
-        if (roomResult.error) {
-          throw new Error('error parsing room');
-        } else {
-          game = roomResult.game;
-          lines = roomResult.lines;
-        }
+        lines = parseRoom(game, lines);
         break;
       }
-
       case 'TIL': {
-        const tilResult = parseTile(game, lines);
-        if (tilResult.error) {
-          throw new Error('error parsing til');
-        } else {
-          game = tilResult.game;
-          lines = tilResult.lines;
-        }
+        lines = parseTile(game, lines);
         break;
       }
-
       case 'SPR': {
-        const sprResult = parseSprite(game, lines);
-        if (sprResult.error) {
-          throw new Error('error parsing spr');
-        } else {
-          game = sprResult.game;
-          lines = sprResult.lines;
-        }
+        lines = parseSprite(game, lines);
         break;
       }
-
+      case 'VAR': {
+        lines = parseVar(game, lines);
+        break;
+      }
       default: {
         lines = lines.slice(1);
       }

@@ -47,6 +47,8 @@ class App extends React.Component<Props, State> {
         rooms: [],
         tiles: [],
         sprites: [],
+        startingItems: [],
+        variables: {},
       },
       rawGameData: '',
     };
