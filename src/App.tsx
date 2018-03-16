@@ -47,6 +47,7 @@ class App extends React.Component<Props, State> {
         rooms: [],
         tiles: [],
         sprites: [],
+        items: [],
         startingItems: [],
         variables: {},
       },
@@ -205,7 +206,7 @@ class App extends React.Component<Props, State> {
           <Card title="Sprites" width={256}>
             {palette &&
               <TileList
-                items={game.sprites}
+                items={[...game.sprites, ...game.items]}
                 bgColour={palette.bg}
                 fgColour={palette.sprite}
                 selectedId={this.state.selectedSpriteId}

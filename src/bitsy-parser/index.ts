@@ -12,6 +12,7 @@ export interface BitsyGame {
   rooms: Array<BitsyRoom>;
   tiles: Array<BitsyTile>;
   sprites: Array<BitsySprite>;
+  items: Array<BitsyItem>;
   startingItems: Array<BitsyVariables>;
   variables: BitsyVariables;
 }
@@ -62,8 +63,7 @@ export interface BitsySprite extends BitsyThing, BitsyDrawable {
   dialogId?: string;
 }
 
-export interface BitsyItem extends BitsyThing {
-  frames: Array<Array<boolean>>;
+export interface BitsyItem extends BitsyThing, BitsyDrawable {
   dialogId?: string;
 }
 
@@ -104,6 +104,26 @@ function getExit(line: string): BitsyExit {
     toX,
     toY,
   };
+}
+
+function getFrames(lines: Array<string>): [Array<string>, Array<Array<boolean>>] {
+  const frames: Array<Array<boolean>> = [];
+  while (true) {
+    let frame: Array<boolean> = [];
+    for (let i = 0; i < 8; i++) {
+      const l = lines[i].split('').map((s) => s === '1');
+      frame = frame.concat(l);
+    }
+
+    frames.push(frame);
+    lines = lines.slice(8);
+    if (!lines[0].startsWith('>')) {
+      break;
+    }
+    // consume the '>\n'
+    lines = lines.slice(1);
+  }
+  return [lines, frames];
 }
 
 function parseTitle(game: BitsyGame, input: Array<string>): Array<string> {
@@ -202,21 +222,7 @@ function parseTile(game: BitsyGame, input: Array<string>): Array<string> {
   };
   let lines = input.slice(1);
 
-  while (true) {
-    let frame: Array<boolean> = [];
-    for (let i = 0; i < 8; i++) {
-      const l = lines[i].split('').map((s) => s === '1');
-      frame = frame.concat(l);
-    }
-
-    tile.frames.push(frame);
-    lines = lines.slice(8);
-    if (!lines[0].startsWith('>')) {
-      break;
-    }
-    // consume the '>\n'
-    lines = lines.slice(1);
-  }
+  [lines, tile.frames] = getFrames(lines);
 
   let line = lines[0];
   while (line.length > 0) {
@@ -258,21 +264,7 @@ function parseSprite(game: BitsyGame, input: Array<string>): Array<string> {
 
   let lines = input.slice(1);
 
-  while (true) {
-    let frame: Array<boolean> = [];
-    for (let i = 0; i < 8; i++) {
-      const l = lines[i].split('').map((s) => s === '1');
-      frame = [...frame, ...l];
-    }
-
-    sprite.frames.push(frame);
-    lines = lines.slice(8);
-    if (!lines[0].startsWith('>')) {
-      break;
-    }
-    // consume the '>\n'
-    lines = lines.slice(1);
-  }
+  [lines, sprite.frames] = getFrames(lines);
 
   let line = lines[0];
   while (line.length > 0) {
@@ -307,6 +299,38 @@ function parseSprite(game: BitsyGame, input: Array<string>): Array<string> {
   return lines;
 }
 
+function parseItem(game: BitsyGame, input: Array<string>): Array<string> {
+  const item: BitsyItem = {
+    id: getId(input[0]),
+    name: '',
+    frames: [],
+  };
+  let lines = input.slice(1);
+  [lines, item.frames] = getFrames(lines);
+
+  let line = lines[0];
+  while (line.length > 0) {
+    const cmd = line.split(' ')[0];
+
+    switch (cmd) {
+      case 'NAME': {
+        item.name = getArg(line);
+        break;
+      }
+      case 'DLG': {
+        item.dialogId = getArg(line);
+        break;
+      }
+      default: break;
+    }
+    lines = lines.slice(1);
+    line = lines[0];
+  }
+
+  game.items.push(item);
+  return lines;
+}
+
 function parseVar(game: BitsyGame, input: Array<string>): Array<string> {
   const name = getArg(input[0]);
   let lines = input.slice(1);
@@ -325,6 +349,7 @@ function parseBitsy(input: string): BitsyGame {
     rooms: [],
     tiles: [],
     sprites: [],
+    items: [],
     startingItems: [],
     variables: {},
   };
@@ -357,6 +382,10 @@ function parseBitsy(input: string): BitsyGame {
       }
       case 'SPR': {
         lines = parseSprite(game, lines);
+        break;
+      }
+      case 'ITM': {
+        lines = parseItem(game, lines);
         break;
       }
       case 'VAR': {
