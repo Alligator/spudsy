@@ -3,6 +3,7 @@ import { BitsyDrawable } from '../bitsy-parser';
 import ImageEditor from '../atoms/ImageEditor';
 import ListItem from '../atoms/ListItem';
 import Tile from '../atoms/Tile';
+import formatId from '../formatId';
 
 type Props = {
   size: number,
@@ -93,7 +94,7 @@ class TileEditor extends React.PureComponent<Props, State> {
         <div style={{ marginTop: '10px' }}>
           {this.props.tile.frames.map((frame, idx) => (
             <ListItem
-              key={`${tile.id}-${idx}`}
+              key={`${formatId(tile)} - ${idx}`}
               onClick={() => { this.setState({ selectedFrame: idx }); }}
               selected={this.state.selectedFrame === idx}
             >

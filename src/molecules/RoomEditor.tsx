@@ -1,8 +1,10 @@
 import * as React from 'react';
 import { BitsyRoom, BitsyTile, BitsyPalette, BitsySprite, BitsyDrawable } from '../bitsy-parser';
 import ListItem from '../atoms/ListItem';
+import ListItemButton from '../atoms/ListItemButton';
 import Filterable from '../atoms/Filterable';
 import ImageEditor from '../atoms/ImageEditor';
+import formatId from '../formatId';
 
 class RoomFilterable extends Filterable<BitsyRoom> { }
 
@@ -16,6 +18,7 @@ type Props = {
   size: number,
   handleSelectRoom: (room: BitsyRoom) => void,
   handleEditRoom: (newRoom: BitsyRoom) => void,
+  handleDeleteRoom: (room: BitsyRoom) => void,
   handleSelectTile: (tile: BitsyTile) => void,
 };
 
@@ -133,7 +136,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
   getCellInfo(x: number, y: number): React.ReactNode {
     const currentTile = this.getTileAtCoords(x, y);
     if (currentTile) {
-      return `${currentTile.id} - ${currentTile.name}`;
+      return formatId(currentTile);
     }
     return null;
   }
@@ -169,7 +172,6 @@ class RoomEditor extends React.PureComponent<Props, State> {
   render() {
     return (
       <div>
-
         <ImageEditor
           size={this.props.size}
           tileCount={16}
@@ -194,7 +196,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
         >
           <RoomFilterable
             items={this.props.rooms}
-            getKey={room => `${room.id} - ${room.name}`}
+            getKey={room => formatId(room)}
             render={rooms => rooms.map((room: BitsyRoom) => (
               <ListItem
                 key={room.id}
@@ -203,10 +205,21 @@ class RoomEditor extends React.PureComponent<Props, State> {
                     ? (this.props.selectedRoomId === room.id)
                     : false
                 }
-                style={{ paddingLeft: '10px' }}
+                style={{
+                  padding: '0 10px',
+                  display: 'flex',
+                }}
                 onClick={this.props.handleSelectRoom.bind(this, room)}
               >
-                {room.id} - {room.name}
+                <div style={{ flexGrow: 1 }}>
+                  {formatId(room)}
+                </div>
+                <ListItemButton
+                  onClick={this.props.handleDeleteRoom.bind(this, room)}
+                  title="Delete room"
+                >
+                  <i className="fas fa-trash-alt fa-lg" />
+                </ListItemButton>
               </ListItem>
             ))}
           />

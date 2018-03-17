@@ -95,7 +95,8 @@ class ImageEditor extends React.Component<Props, State> {
     ctx.save();
     ctx.translate(0.5, 0.5);
     if (this.props.drawGrid) {
-      ctx.strokeStyle = tinycolor(this.props.bgColour).isDark() ? colours.bg2 : colours.fg1;
+      const color = tinycolor(this.props.bgColour).isDark() ? 255 : 1;
+      ctx.strokeStyle = `rgba(${color}, ${color}, ${color}, 0.3)`;
       ctx.beginPath();
       for (let x = 1; x < tileCount; x++) {
         ctx.moveTo(x * this.cellSize, 0);

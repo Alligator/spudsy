@@ -12,6 +12,7 @@
     "react-dom": "^16.2.0",
     "react-scripts-ts": "2.13.0",
     "react-styled-components": "0.1.11",
+    "sweetalert": "^2.1.0",
     "tinycolor2": "^1.4.1"
   },
   "scripts": {

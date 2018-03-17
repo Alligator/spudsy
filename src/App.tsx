@@ -12,8 +12,11 @@ import parseBitsy, {
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
 import TileEditor from './molecules/TileEditor';
-import TileList from './molecules/TileList';
+// import TileList from './molecules/TileList';
 import RoomEditor from './molecules/RoomEditor';
+import swal from 'sweetalert';
+import formatId from './formatId';
+import ThingsEditor from './molecules/ThingsEditor';
 
 const VerticalContainer = styled.div`
   display: flex;
@@ -27,6 +30,7 @@ type State = {
   selectedRoomId?: number,
   selectedTileId?: number,
   selectedSpriteId?: number,
+  selectedItemId?: number,
   rawGameData: string,
 };
 
@@ -57,6 +61,11 @@ class App extends React.Component<Props, State> {
     this.handleTileChange = this.handleTileChange.bind(this);
     this.handleEditRoom = this.handleEditRoom.bind(this);
     this.handleEditGameData = this.handleEditGameData.bind(this);
+
+    this.handleDeleteRoom = this.handleDeleteRoom.bind(this);
+    this.handleDeleteTile = this.handleDeleteTile.bind(this);
+    this.handleDeleteSprite = this.handleDeleteSprite.bind(this);
+    this.handleDeleteItem = this.handleDeleteItem.bind(this);
   }
 
   componentDidMount() {
@@ -84,6 +93,50 @@ class App extends React.Component<Props, State> {
     }
   }
 
+  handleDeleteTile(thingToDelete: BitsyDrawable) {
+    swal({
+      title: `Delete tile "${formatId(thingToDelete)}"?`,
+      text: 'This cannot be undone!',
+      icon: 'warning',
+      dangerMode: true,
+    })
+      .then((willDelete) => {
+        if (willDelete) {
+          const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
+          this.setState({ game: Object.assign({}, this.state.game, { tiles: newTiles }) });
+        }
+      });
+  }
+
+  handleDeleteSprite(thingToDelete: BitsyDrawable) {
+    swal({
+      title: `Delete sprite "${formatId(thingToDelete)}"?`,
+      text: 'This cannot be undone!',
+      icon: 'warning',
+      dangerMode: true,
+    })
+      .then((willDelete) => {
+        if (willDelete) {
+          const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
+          this.setState({ game: Object.assign({}, this.state.game, { sprites: newSprites }) });
+        }
+      });
+  }
+
+  handleDeleteItem(thingToDelete: BitsyDrawable) {
+    swal({
+      title: `Delete item "${formatId(thingToDelete)}"?`,
+      text: 'This cannot be undone!',
+      icon: 'warning',
+      dangerMode: true,
+    })
+      .then((willDelete) => {
+        if (willDelete) {
+          const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
+          this.setState({ game: Object.assign({}, this.state.game, { items: newItems }) });
+        }
+      });
+  }
   handleEditRoom(newRoom: BitsyRoom) {
     const newRooms = this.state.game.rooms.map((room) => {
       if (room.id === this.state.selectedRoomId) {
@@ -93,6 +146,22 @@ class App extends React.Component<Props, State> {
     });
 
     this.setState({ game: Object.assign({}, this.state.game, { rooms: newRooms }) });
+  }
+
+  handleDeleteRoom(roomToDelete: BitsyRoom) {
+    swal({
+      title: `Delete room "${formatId(roomToDelete)}"?`,
+      text: 'This cannot be undone!',
+      icon: 'warning',
+      dangerMode: true,
+    })
+      .then((willDelete) => {
+        if (willDelete) {
+          const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
+          this.setState({ game: Object.assign({}, this.state.game, { rooms: newRooms }) });
+        }
+      });
+    return;
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -135,10 +204,14 @@ class App extends React.Component<Props, State> {
     const { game } = this.state;
 
     let selectedThing: BitsyDrawable | null = null;
+    let isTile = false;
     if (typeof this.state.selectedTileId === 'number') {
       selectedThing = this.findThing(game.tiles, this.state.selectedTileId) as BitsyDrawable;
+      isTile = true;
     } else if (typeof this.state.selectedSpriteId === 'number') {
       selectedThing = this.findThing(game.sprites, this.state.selectedSpriteId) as BitsyDrawable;
+    } else if (typeof this.state.selectedItemId === 'number') {
+      selectedThing = this.findThing(game.items, this.state.selectedItemId) as BitsyDrawable;
     }
 
     const palette = this.getCurrentPalette();
@@ -159,6 +232,7 @@ class App extends React.Component<Props, State> {
                 sprites={game.sprites}
                 selectedTile={selectedThing as BitsyTile}
                 handleEditRoom={this.handleEditRoom}
+                handleDeleteRoom={this.handleDeleteRoom}
                 handleSelectTile={(tile) => {
                   this.setState({ selectedTileId: tile.id });
                 }}
@@ -173,7 +247,7 @@ class App extends React.Component<Props, State> {
                 size={256}
                 tileCount={8}
                 bgColour={palette.bg}
-                fgColour={typeof this.state.selectedSpriteId === 'number' ? palette.sprite : palette.tile}
+                fgColour={isTile ? palette.tile : palette.sprite}
                 tile={selectedThing as BitsyTile}
                 handleChange={this.handleTileChange}
               /> : <div>There is no tile selected!</div>}
@@ -187,6 +261,45 @@ class App extends React.Component<Props, State> {
         </VerticalContainer>
 
         <VerticalContainer>
+          <Card title="Things" width={256}>
+            {palette &&
+              <ThingsEditor
+                palette={palette}
+                tiles={game.tiles}
+                sprites={game.sprites}
+                items={game.items}
+                selectedTileId={this.state.selectedTileId}
+                selectedSpriteId={this.state.selectedSpriteId}
+                selectedItemId={this.state.selectedItemId}
+
+                handleSelectTile={(tile) => {
+                  this.setState({
+                    selectedTileId: tile.id,
+                    selectedSpriteId: undefined,
+                    selectedItemId: undefined,
+                  });
+                }}
+                handleSelectSprite={(sprite) => {
+                  this.setState({
+                    selectedTileId: undefined,
+                    selectedSpriteId: sprite.id,
+                    selectedItemId: undefined,
+                  });
+                }}
+                handleSelectItem={(item) => {
+                  this.setState({
+                    selectedTileId: undefined,
+                    selectedSpriteId: undefined,
+                    selectedItemId: item.id,
+                  });
+                }}
+
+                handleDeleteTile={this.handleDeleteTile}
+                handleDeleteSprite={this.handleDeleteSprite}
+                handleDeleteItem={this.handleDeleteItem}
+              />}
+          </Card>
+          {/*
           <Card title="Tiles" width={256}>
             {palette &&
               <TileList
@@ -200,6 +313,7 @@ class App extends React.Component<Props, State> {
                     selectedSpriteId: undefined,
                   });
                 }}
+                handleDelete={this.handleDeleteTile}
               />}
           </Card>
 
@@ -216,8 +330,10 @@ class App extends React.Component<Props, State> {
                     selectedTileId: undefined,
                   });
                 }}
+                handleDelete={this.handleDeleteSprite}
               />}
           </Card>
+          */}
         </VerticalContainer>
 
         <Card title="Game Data" width={256}>
