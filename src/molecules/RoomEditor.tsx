@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { BitsyRoom, BitsyTile, BitsyPalette, BitsySprite, BitsyDrawable } from '../bitsy-parser';
+import { BitsyRoom, BitsyTile, BitsyPalette, BitsySprite, BitsyDrawable, BitsyItem } from '../bitsy-parser';
 import ListItem from '../atoms/ListItem';
 import ListItemButton from '../atoms/ListItemButton';
 import Filterable from '../atoms/Filterable';
@@ -13,34 +13,59 @@ type Props = {
   rooms: Array<BitsyRoom>,
   tiles: Array<BitsyTile>,
   sprites: Array<BitsySprite>,
-  selectedTile: BitsyTile,
+  items: Array<BitsyItem>,
+  selectedTileId?: number,
+  selectedSpriteId?: number,
+  selectedItemId?: number,
   palette: BitsyPalette,
   size: number,
   handleSelectRoom: (room: BitsyRoom) => void,
   handleEditRoom: (newRoom: BitsyRoom) => void,
   handleDeleteRoom: (room: BitsyRoom) => void,
+  handleEditSprite: (sprite: BitsySprite) => void,
   handleSelectTile: (tile: BitsyTile) => void,
 };
 
 type State = {
   addingTiles: boolean,
+  ignoreEdits: boolean,
+  currentFrame: number,
 };
 
 class RoomEditor extends React.PureComponent<Props, State> {
   canvas: HTMLCanvasElement;
+  interval: number;
 
   constructor(props: Props) {
     super(props);
 
     this.state = {
       addingTiles: false,
+      ignoreEdits: false,
+      currentFrame: 0,
     };
 
     this.handleEditStart = this.handleEditStart.bind(this);
     this.handleEdit = this.handleEdit.bind(this);
+    this.handleEditEnd = this.handleEditEnd.bind(this);
     this.handleInspect = this.handleInspect.bind(this);
     this.getCellInfo = this.getCellInfo.bind(this);
     this.renderCell = this.renderCell.bind(this);
+  }
+
+  componentDidMount() {
+    this.interval = window.setInterval(
+      () => {
+        this.setState(
+          (prevState: State) => ({ currentFrame: (this.state.currentFrame + 1) % 2 }),
+          () => this.forceUpdate(),
+        );
+      },
+      400,
+    );
+  }
+  componentWillUnmount() {
+    clearInterval(this.interval);
   }
 
   get cellSize() {
@@ -53,58 +78,103 @@ class RoomEditor extends React.PureComponent<Props, State> {
 
   handleEditStart(x: number, y: number) {
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
-    if (selectedRoom && this.props.selectedTile) {
-      const tileId = selectedRoom.tiles[x + y * 16];
-      this.setState(
-        (prevState: State) => ({ addingTiles: tileId !== this.props.selectedTile.id }),
-        () => this.handleEdit(x, y),
-      );
+    if (selectedRoom) {
+      const foundTile = this.getTileAtCoords(x, y);
+      const foundSprite = this.getSpriteAtCoords(x, y);
+      const foundItem = this.getItemAtCoords(x, y);
+      const tileSelected = typeof this.props.selectedTileId === 'number';
+      const spriteSelected = typeof this.props.selectedSpriteId === 'number';
+      const itemSelected = typeof this.props.selectedItemId === 'number';
+
+      if (tileSelected) {
+        // tile selected, ignore sprites and items and only check the tile
+        if (foundTile) {
+          // clicked on a tile with a tile selected, start removing tiles
+          this.setState(
+            (prevState: State) => ({ addingTiles: false }),
+            () => this.handleEdit(x, y),
+          );
+        } else {
+          // clicked on an empty cell with a tile selected, start drawing that tile
+          this.setState(
+            (prevState: State) => ({ addingTiles: true }),
+            () => this.handleEdit(x, y),
+          );
+        }
+      } else if (spriteSelected) {
+        if (foundSprite) {
+          // clicked on a sprite with a sprite selected, remove that sprite and ignore editing until mouseup
+          const newSprite = Object.assign({}, foundSprite, { pos: null });
+          this.props.handleEditSprite(newSprite);
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else if (foundItem) {
+          // clicked on an item with a sprite selected, remove that item and ignore editing until mouseup
+          const newItems = selectedRoom.items.filter(item => item.id !== foundItem.id || item.x !== x || item.y !== y);
+          this.props.handleEditRoom(Object.assign({}, selectedRoom, { items: newItems }));
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else {
+          // clicked on an empty cell with a sprite selected, move that sprite and ignore editing until mouseup
+          const selectedSprite = this.props.sprites.filter(sprite => sprite.id === this.props.selectedSpriteId)[0];
+          const newSprite = Object.assign({}, selectedSprite, { pos: { id: selectedRoom.id, x, y } });
+          this.props.handleEditSprite(newSprite);
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        }
+      } else if (itemSelected) {
+        if (foundSprite) {
+          // clicked on a sprite with an item selected, remove the sprite and ignore editing until mouseup
+          const newSprite = Object.assign({}, foundSprite, { pos: null });
+          this.props.handleEditSprite(newSprite);
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else if (foundItem) {
+          // clicked on an item with an item selected, remove that item and ignore editing until mouseup
+          const newItems = selectedRoom.items.filter(item => item.id !== foundItem.id || item.x !== x || item.y !== y);
+          this.props.handleEditRoom(Object.assign({}, selectedRoom, { items: newItems }));
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else {
+          // clicked on an empty cell with an item selected, create that item and ignore editing until mouseup
+          const selectedItem = this.props.items.filter(item => item.id === this.props.selectedItemId)[0];
+          const newItems = [...selectedRoom.items, { id: selectedItem.id, x, y }];
+          this.props.handleEditRoom(Object.assign({}, selectedRoom, { items: newItems }));
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        }
+      }
     }
   }
 
   handleEdit(x: number, y: number) {
-    /*
-    TODO: rewrite this entire function to make sense
+    if (this.state.ignoreEdits) {
+      return;
+    }
 
-    This needs to handle these cases:
-
-    - Clicking on an empty cell with a tile selected.
-      Start drawing that tile at the cell.
-
-    - Clicking on an empty cell with a sprite selected.
-    - Clicking on a cell containing a tile with a sprite selected.
-      Move that sprite to the cell.
-
-    - Clicking on a cell containing a tile with a tile selected.
-      Start removing tiles at the cell.
-
-    - Clicking on a cell containing a sprite with a sprite selected.
-      Remove that sprite from that cell.
-
-    - Clicking on a cell containing a sprite with a tile selected
-      Ignore the sprite, do the above behaviour depending on if there's a tile there or not.
-    */
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     if (selectedRoom) {
-      const foundTile = this.getTileAtCoords(x, y);
-      const foundSprite = this.getSpriteAtCoords(x, y);
-
-      if (foundTile) {
-        const newTiles = selectedRoom.tiles.slice();
-        newTiles[x + y * 16] = this.state.addingTiles ? this.props.selectedTile.id : 0;
-        this.props.handleEditRoom(Object.assign({}, selectedRoom, { tiles: newTiles }));
-      } else if (foundSprite) {
-        const newSprite = Object.assign(
-          {},
-          foundSprite,
-          {
-            pos: { roomId: this.props.selectedRoomId, x, y }
-          },
-        );
-        const newSprites = this.props.sprites.map(sprite => sprite.id === foundSprite.id ? newSprite : sprite);
-        this.props.handleEditRoom(Object.assign({}, selectedRoom, { sprites: newSprites }));
+      let tileId: number = 0;
+      if (this.state.addingTiles) {
+        tileId = this.props.selectedTileId || 0;
       }
+      const newTiles = selectedRoom.tiles.slice();
+      newTiles[x + y * 16] = tileId;
+      this.props.handleEditRoom(Object.assign({}, selectedRoom, { tiles: newTiles }));
     }
+  }
+
+  handleEditEnd(x: number, y: number) {
+    this.setState({
+      addingTiles: false,
+      ignoreEdits: false,
+    });
   }
 
   handleInspect(x: number, y: number) {
@@ -124,11 +194,18 @@ class RoomEditor extends React.PureComponent<Props, State> {
   }
 
   getSpriteAtCoords(x: number, y: number): BitsySprite | null {
+    const sprites = this.props.sprites.filter(sprite =>
+      sprite.pos && (sprite.pos.x === x && sprite.pos.y === y) && sprite.pos.id === this.props.selectedRoomId);
+    return sprites[0];
+  }
+
+  getItemAtCoords(x: number, y: number): BitsyItem | null {
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     if (selectedRoom) {
-      const sprites = this.props.sprites.filter(sprite =>
-        sprite.pos && (sprite.pos.x === x && sprite.pos.y === y));
-      return sprites[0];
+      const items = selectedRoom.items.filter(item => item.x === x && item.y === y);
+      if (items.length > 0) {
+        return this.props.items.filter(item => item.id === items[0].id)[0];
+      }
     }
     return null;
   }
@@ -148,14 +225,15 @@ class RoomEditor extends React.PureComponent<Props, State> {
 
     const currentTile = this.getTileAtCoords(x, y);
     const sprite = this.getSpriteAtCoords(x, y);
+    const item = this.getItemAtCoords(x, y);
 
-    if (currentTile || sprite) {
+    if (currentTile || sprite || item) {
       for (let ix = 0; ix < 8; ix++) {
         for (let iy = 0; iy < 8; iy++) {
-          // TODO: multiple frames!!!
-          const thing = (sprite ? sprite : currentTile) as BitsyDrawable;
-          const hasPixel = thing.frames[0][ix + iy * 8];
-          ctx.fillStyle = sprite ? this.props.palette.sprite : this.props.palette.tile;
+          const thing = (sprite || item || currentTile) as BitsyDrawable;
+          let frameId = thing.frames.length > 1 ? this.state.currentFrame : 0;
+          const hasPixel = thing.frames[frameId][ix + iy * 8];
+          ctx.fillStyle = (sprite || item) ? this.props.palette.sprite : this.props.palette.tile;
           if (hasPixel) {
             ctx.fillRect(
               x * this.cellSize + ix * this.innerCellSize,
@@ -180,6 +258,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
           renderCell={this.renderCell}
           handleEditStart={this.handleEditStart}
           handleEdit={this.handleEdit}
+          handleEditEnd={this.handleEditEnd}
           handleInspect={this.handleInspect}
           getCellInfo={this.getCellInfo}
           canInspect={true}

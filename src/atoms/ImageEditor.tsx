@@ -13,6 +13,7 @@ type Props = {
   renderCell: (ctx: CanvasRenderingContext2D, x: number, y: number) => void,
   handleEdit: (x: number, y: number) => void,
   handleEditStart: (x: number, y: number) => void,
+  handleEditEnd: (x: number, y: number) => void,
   handleInspect: (x: number, y: number) => void,
   getCellInfo: (x: number, y: number) => React.ReactNode,
   drawGrid?: boolean,
@@ -142,6 +143,9 @@ class ImageEditor extends React.Component<Props, State> {
   }
 
   handleMouseUp(evt: React.MouseEvent<HTMLDivElement>) {
+    const coords = this.getCellCoordsFromMouseEvt(evt);
+
+    this.props.handleEditEnd(coords.x, coords.y);
     this.setState({
       mouseDown: false,
     });

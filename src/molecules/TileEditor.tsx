@@ -88,6 +88,7 @@ class TileEditor extends React.PureComponent<Props, State> {
           renderCell={this.renderCell}
           handleEditStart={this.handleEditStart}
           handleEdit={this.handleEdit}
+          handleEditEnd={() => null}
           handleInspect={this.handleInspect}
           getCellInfo={this.getCellInfo}
         />

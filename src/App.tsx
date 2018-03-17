@@ -8,6 +8,7 @@ import parseBitsy, {
   BitsyPalette,
   serializeBitsy,
   BitsyDrawable,
+  BitsySprite,
 } from './bitsy-parser';
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
@@ -66,6 +67,8 @@ class App extends React.Component<Props, State> {
     this.handleDeleteTile = this.handleDeleteTile.bind(this);
     this.handleDeleteSprite = this.handleDeleteSprite.bind(this);
     this.handleDeleteItem = this.handleDeleteItem.bind(this);
+
+    this.handleEditSprite = this.handleEditSprite.bind(this);
   }
 
   componentDidMount() {
@@ -94,6 +97,7 @@ class App extends React.Component<Props, State> {
   }
 
   handleDeleteTile(thingToDelete: BitsyDrawable) {
+    // TODO: tidy up any rooms that have this tile
     swal({
       title: `Delete tile "${formatId(thingToDelete)}"?`,
       text: 'This cannot be undone!',
@@ -124,6 +128,7 @@ class App extends React.Component<Props, State> {
   }
 
   handleDeleteItem(thingToDelete: BitsyDrawable) {
+    // TODO: tidy up any rooms that have this item
     swal({
       title: `Delete item "${formatId(thingToDelete)}"?`,
       text: 'This cannot be undone!',
@@ -162,6 +167,17 @@ class App extends React.Component<Props, State> {
         }
       });
     return;
+  }
+
+  handleEditSprite(newSprite: BitsySprite) {
+    const newSprites = this.state.game.sprites.map((sprite) => {
+      if (sprite.id === newSprite.id) {
+        return newSprite;
+      }
+      return sprite;
+    });
+
+    this.setState({ game: Object.assign({}, this.state.game, { sprites: newSprites }) });
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -230,9 +246,13 @@ class App extends React.Component<Props, State> {
                 palette={palette}
                 tiles={game.tiles}
                 sprites={game.sprites}
-                selectedTile={selectedThing as BitsyTile}
+                items={game.items}
+                selectedTileId={this.state.selectedTileId}
+                selectedSpriteId={this.state.selectedSpriteId}
+                selectedItemId={this.state.selectedItemId}
                 handleEditRoom={this.handleEditRoom}
                 handleDeleteRoom={this.handleDeleteRoom}
+                handleEditSprite={this.handleEditSprite}
                 handleSelectTile={(tile) => {
                   this.setState({ selectedTileId: tile.id });
                 }}
