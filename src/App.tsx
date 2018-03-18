@@ -476,14 +476,11 @@ class App extends React.Component<Props, State> {
 
     const selectedRoom = this.state.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
 
+    const InfoSeparator = <div style={{ margin: '0 10px' }}>|</div>;
+
     const palette = this.getCurrentPalette();
     return (
-      <div>
-        <h1 style={{ margin: '10px 0 0 10px', color: colours.fg1 }}>
-          spudsy |{' '}
-          by <a href="https://alligatr.co.uk" target="_blank">alligator</a> |{' '}
-          <a href="https://github.com/Alligator/spudsy" target="_blank"><i className="fab fa-github" /></a>
-        </h1>
+      <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           <VerticalContainer>
             <Card title={`Room ${selectedRoom ? formatId(selectedRoom) : 'Editor'}`} width={384}>
@@ -645,6 +642,23 @@ class App extends React.Component<Props, State> {
               </Button>
             </Card>
           </VerticalContainer>
+        </div>
+        <div
+          style={{
+            flexGrow: 1,
+            display: 'flex',
+            alignItems: 'flex-end',
+            fontSize: '12pt',
+            marginBottom: '10px',
+            marginLeft: '10px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="spud.png" />
+            <a href="https://github.com/Alligator/spudsy" target="_blank">spudsy</a>
+            {InfoSeparator}
+            <div>by <a href="https://alligatr.co.uk" target="_blank">alligator</a></div>
+          </div>
         </div>
       </div>
     );

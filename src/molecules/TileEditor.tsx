@@ -107,7 +107,7 @@ class TileEditor extends React.PureComponent<Props, State> {
             <FormGroup
               htmlFor="spudsy-thing__name"
               label="Name"
-              style={{ margin: '20px 0' }}
+              style={{ margin: '10px 0' }}
             >
               <DebouncedInput
                 id="spudy-thing__name"
