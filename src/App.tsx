@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'react-emotion';
 import parseBitsy, {
   BitsyGame,
   BitsyTile,
@@ -20,7 +20,7 @@ import formatId from './formatId';
 import ThingsEditor from './molecules/ThingsEditor';
 import * as colours from './colours';
 
-const VerticalContainer = styled.div`
+const VerticalContainer = styled('div')`
   display: flex;
   flex-direction: column;
   height: 100%;

@@ -1,7 +1,7 @@
-import styled from 'styled-components';
+import styled from 'react-emotion';
 import * as colours from '../colours';
 
-const Input = styled.input`
+const Input = styled('input')`
   display: flex;
   align-items: center;
   background-color: ${colours.bg1};
@@ -19,7 +19,7 @@ const Input = styled.input`
 `;
 
 const Select = Input.withComponent('select');
-const Button = styled.button`
+const Button = styled('button')`
   display: flex;
   align-items: center;
   background-color: ${colours.fg2};

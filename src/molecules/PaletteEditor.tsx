@@ -1,7 +1,6 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'react-emotion';
 import ColourPicker from '../atoms/ColourPicker';
-import { withProps } from '../types';
 import ListItem from '../atoms/ListItem';
 import { BitsyPalette } from '../bitsy-parser';
 import { RGBColor } from 'react-color';
@@ -21,7 +20,7 @@ type State = {
   selectedPalette?: BitsyPalette,
 };
 
-const SquareColourBlock = withProps<{ colour: string }>()(styled.div) `
+const SquareColourBlock = styled<{ colour: string }, 'div'>('div')`
   height: 32px;
   width: 10px;
   background-color: ${(props) => props.colour};

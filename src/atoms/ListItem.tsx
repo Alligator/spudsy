@@ -1,12 +1,11 @@
-import styled from 'styled-components';
-import { withProps } from '../types';
+import styled from 'react-emotion';
 import * as colours from '../colours';
 
 type Props = {
   selected: boolean,
 };
 
-const ListItem = withProps<Props>()(styled.div)`
+const ListItem = styled<Props, 'div'>('div')`
   display: flex;
   align-items: center;
   background-color: ${(props) => props.selected ? colours.fg2 : colours.bg2};

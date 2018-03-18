@@ -190,7 +190,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
     }
   }
 
-  handleEditPalette(evt: React.ChangeEvent<HTMLInputElement>) {
+  handleEditPalette(evt: React.ChangeEvent<HTMLSelectElement>) {
     const newPaletteId = parseInt(evt.target.value, 10);
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     const newRoom = Object.assign({}, selectedRoom, { paletteId: newPaletteId });

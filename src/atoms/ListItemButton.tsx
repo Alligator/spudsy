@@ -1,5 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'react-emotion';
 import * as colours from '../colours';
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
   onClick: () => void,
 };
 
-const StyledButton = styled.button`
+const StyledButton = styled('button')`
   border: none;
   background-color: inherit;
   color: inherit;

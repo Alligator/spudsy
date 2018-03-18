@@ -1,7 +1,6 @@
 import * as React from 'react';
-import styled from 'styled-components';
+import styled from 'react-emotion';
 import * as colours from '../colours';
-import { withProps } from '../types';
 
 type Props = {
   tabs: Array<string>,
@@ -12,7 +11,7 @@ type State = {
   currentTab: string,
 };
 
-const Tab = withProps<{ active: boolean }>()(styled.div) `
+const Tab = styled<{ active: boolean }, 'div'>('div')`
   flex-grow: 1;
   text-align: center;
   background-color: ${(props) => props.active ? colours.fg2 : colours.bg2};
