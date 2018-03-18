@@ -1,24 +1,5 @@
 import * as React from 'react';
-import styled from 'styled-components';
-import * as colours from '../colours';
-
-const FilterInput = styled.input`
-  display: flex;
-  align-items: center;
-  background-color: ${colours.bg2};
-  color: ${colours.fg};
-  min-height: 32px;
-  max-height: 32px;
-  box-sizing: border-box;
-  margin-bottom: 10px;
-  padding: 0 0 0 10px;
-  border: 2px solid ${colours.fg2};
-  font-family: 'Montserrat', 'Segoe UI', 'Helvetica', sans-serif;
-
-  &::placeholder {
-    color: ${colours.fg1};
-  }
-`;
+import { Input } from './Inputs';
 
 interface Props<T> {
   items: Array<T>;
@@ -61,10 +42,11 @@ class Filterable<T> extends React.PureComponent<Props<T>, State> {
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <FilterInput
+        <Input
           type="text"
           onChange={this.handleInputChange}
           placeholder="search"
+          style={{ marginBottom: '10px' }}
         />
         {this.props.render(filteredItems)}
       </div>

@@ -9,12 +9,49 @@ body {
   color: #fbf5ef;
 }
 
+a, a:visited {
+  color: #8595ad;
+}
+
+a:hover {
+  color: #fbf5ef;
+}
+
 h1, h2, h3 {
   font-size: 1rem;
-  margin: 0;
+  margin: 0 0 10px 0;
   padding: 0;
+  font-weight: normal;
 }
 
 .spudsy-tab + .spudsy-tab {
   margin-left: 10px;
+}
+
+canvas {
+  display: block;
+}
+
+/* sweetalert */
+.swal-overlay {
+  background-color: rgba(0, 8, 32, 0.5);
+}
+
+.swal-modal {
+  background-color: #333a46;
+  border: 2px solid #667a99;
+  color: #fbf5ef;
+}
+
+.swal-title, .swal-text {
+  color: #fbf5ef;
+}
+
+.swal-button {
+  border: none;
+  border-radius: 0;
+}
+
+.swal-button:focus {
+  box-shadow: none;
 }

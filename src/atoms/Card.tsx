@@ -4,7 +4,7 @@ import { withProps } from '../types';
 import * as colours from '../colours';
 
 type Props = {
-  title: string,
+  title: React.ReactNode,
   width: number,
   children: React.ReactNode,
 };
@@ -24,6 +24,7 @@ const CardContainer = withProps<{ width: number }>()(styled.div)`
 const CardHeader = styled.h2`
   padding: 10px;
   font-weight: normal;
+  margin-bottom: 0;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   background-color: ${colours.bg2};

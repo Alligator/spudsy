@@ -4,6 +4,7 @@ import ImageEditor from '../atoms/ImageEditor';
 import ListItem from '../atoms/ListItem';
 import Tile from '../atoms/Tile';
 import formatId from '../formatId';
+import * as colours from '../colours';
 
 type Props = {
   size: number,
@@ -80,36 +81,54 @@ class TileEditor extends React.PureComponent<Props, State> {
     const { tile } = this.props;
     return (
       <div>
-        <ImageEditor
-          size={this.props.size}
-          tileCount={this.props.tileCount}
-          bgColour={this.props.bgColour}
-          fgColour={this.props.fgColour}
-          renderCell={this.renderCell}
-          handleEditStart={this.handleEditStart}
-          handleEdit={this.handleEdit}
-          handleEditEnd={() => null}
-          handleInspect={this.handleInspect}
-          getCellInfo={this.getCellInfo}
-        />
-        <div style={{ marginTop: '10px' }}>
-          {this.props.tile.frames.map((frame, idx) => (
-            <ListItem
-              key={`${formatId(tile)} - ${idx}`}
-              onClick={() => { this.setState({ selectedFrame: idx }); }}
-              selected={this.state.selectedFrame === idx}
-            >
-              <Tile
-                tile={tile}
-                scale={4}
-                bgColour={this.props.bgColour}
-                fgColour={this.props.fgColour}
-                frame={idx}
-              />
-              <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
-            </ListItem>
-          ))}
-        </div>
+        {tile ?
+          <React.Fragment>
+            <ImageEditor
+              size={this.props.size}
+              tileCount={this.props.tileCount}
+              bgColour={this.props.bgColour}
+              fgColour={this.props.fgColour}
+              renderCell={this.renderCell}
+              handleEditStart={this.handleEditStart}
+              handleEdit={this.handleEdit}
+              handleEditEnd={() => null}
+              handleInspect={this.handleInspect}
+              getCellInfo={this.getCellInfo}
+            />
+            <div style={{ marginTop: '10px' }}>
+              {this.props.tile.frames.map((frame, idx) => (
+                <ListItem
+                  key={`${formatId(tile)} - ${idx}`}
+                  onClick={() => { this.setState({ selectedFrame: idx }); }}
+                  selected={this.state.selectedFrame === idx}
+                >
+                  <Tile
+                    tile={tile}
+                    scale={4}
+                    bgColour={this.props.bgColour}
+                    fgColour={this.props.fgColour}
+                    frame={idx}
+                  />
+                  <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
+                </ListItem>
+              ))}
+            </div>
+          </React.Fragment>
+          :
+          <div
+            style={{
+              // -4 to account for the border size
+              width: this.props.size - 4,
+              height: this.props.size - 4,
+              border: `2px solid ${colours.bg2}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colours.bg2,
+            }}
+          >
+            No tile/sprite/item selected.
+          </div>}
       </div>
     );
   }

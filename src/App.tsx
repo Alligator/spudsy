@@ -18,6 +18,7 @@ import RoomEditor from './molecules/RoomEditor';
 import swal from 'sweetalert';
 import formatId from './formatId';
 import ThingsEditor from './molecules/ThingsEditor';
+import * as colours from './colours';
 
 const VerticalContainer = styled.div`
   display: flex;
@@ -220,158 +221,142 @@ class App extends React.Component<Props, State> {
     const { game } = this.state;
 
     let selectedThing: BitsyDrawable | null = null;
+    let title = 'Thing';
     let isTile = false;
     if (typeof this.state.selectedTileId === 'number') {
       selectedThing = this.findThing(game.tiles, this.state.selectedTileId) as BitsyDrawable;
+      title = 'Tile';
       isTile = true;
     } else if (typeof this.state.selectedSpriteId === 'number') {
       selectedThing = this.findThing(game.sprites, this.state.selectedSpriteId) as BitsyDrawable;
+      title = 'Sprite';
     } else if (typeof this.state.selectedItemId === 'number') {
       selectedThing = this.findThing(game.items, this.state.selectedItemId) as BitsyDrawable;
+      title = 'Item';
     }
+
+    const selectedRoom = this.state.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
 
     const palette = this.getCurrentPalette();
     return (
-      <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-        <VerticalContainer>
-          <Card title="Room" width={512}>
-            {palette &&
-              <RoomEditor
-                rooms={game.rooms}
-                size={512}
-                selectedRoomId={this.state.selectedRoomId}
-                handleSelectRoom={(room) => {
-                  this.setState({ selectedRoomId: room.id });
-                }}
-                palette={palette}
-                tiles={game.tiles}
-                sprites={game.sprites}
-                items={game.items}
-                selectedTileId={this.state.selectedTileId}
-                selectedSpriteId={this.state.selectedSpriteId}
-                selectedItemId={this.state.selectedItemId}
-                handleEditRoom={this.handleEditRoom}
-                handleDeleteRoom={this.handleDeleteRoom}
-                handleEditSprite={this.handleEditSprite}
-                handleSelectTile={(tile) => {
-                  this.setState({ selectedTileId: tile.id });
-                }}
-              />}
-          </Card>
-        </VerticalContainer>
+      <div>
+        <h1 style={{ margin: '10px 0 0 10px', color: colours.fg1 }}>
+          spudsy |{' '}
+          by <a href="https://alligatr.co.uk" target="_blank">alligator</a> |{' '}
+          <a href="https://github.com/Alligator/spudsy" target="_blank"><i className="fab fa-github" /></a>
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+          <VerticalContainer>
+            <Card title={`Room ${selectedRoom ? formatId(selectedRoom) : 'Editor'}`} width={512}>
+              {palette &&
+                <RoomEditor
+                  rooms={game.rooms}
+                  size={512}
+                  selectedRoomId={this.state.selectedRoomId}
+                  handleSelectRoom={(room) => {
+                    this.setState({ selectedRoomId: room.id });
+                  }}
+                  palette={palette}
+                  palettes={game.palettes}
+                  tiles={game.tiles}
+                  sprites={game.sprites}
+                  items={game.items}
+                  selectedTileId={this.state.selectedTileId}
+                  selectedSpriteId={this.state.selectedSpriteId}
+                  selectedItemId={this.state.selectedItemId}
+                  handleEditRoom={this.handleEditRoom}
+                  handleDeleteRoom={this.handleDeleteRoom}
+                  handleEditSprite={this.handleEditSprite}
+                  handleSelectTile={(tile) => {
+                    this.setState({ selectedTileId: tile.id });
+                  }}
+                />}
+            </Card>
+          </VerticalContainer>
 
-        <VerticalContainer>
-          <Card title="Draw" width={256}>
-            {palette && selectedThing ?
-              <TileEditor
-                size={256}
-                tileCount={8}
-                bgColour={palette.bg}
-                fgColour={isTile ? palette.tile : palette.sprite}
-                tile={selectedThing as BitsyTile}
-                handleChange={this.handleTileChange}
-              /> : <div>There is no tile selected!</div>}
-          </Card>
-          <Card title="Palette" width={256}>
-            <PaletteEditor
-              palettes={game.palettes}
-              handleChange={() => null}
-            />
-          </Card>
-        </VerticalContainer>
+          <VerticalContainer>
+            <Card title={`${title} ${selectedThing ? formatId(selectedThing) : 'Editor'}`} width={256}>
+              {palette &&
+                <TileEditor
+                  size={256}
+                  tileCount={8}
+                  bgColour={palette.bg}
+                  fgColour={isTile ? palette.tile : palette.sprite}
+                  tile={selectedThing as BitsyTile}
+                  handleChange={this.handleTileChange}
+                />}
+            </Card>
+            <Card title="Things" width={256}>
+              {palette &&
+                <ThingsEditor
+                  palette={palette}
+                  tiles={game.tiles}
+                  sprites={game.sprites}
+                  items={game.items}
+                  selectedTileId={this.state.selectedTileId}
+                  selectedSpriteId={this.state.selectedSpriteId}
+                  selectedItemId={this.state.selectedItemId}
 
-        <VerticalContainer>
-          <Card title="Things" width={256}>
-            {palette &&
-              <ThingsEditor
-                palette={palette}
-                tiles={game.tiles}
-                sprites={game.sprites}
-                items={game.items}
-                selectedTileId={this.state.selectedTileId}
-                selectedSpriteId={this.state.selectedSpriteId}
-                selectedItemId={this.state.selectedItemId}
+                  handleSelectTile={(tile) => {
+                    this.setState({
+                      selectedTileId: tile.id,
+                      selectedSpriteId: undefined,
+                      selectedItemId: undefined,
+                    });
+                  }}
+                  handleSelectSprite={(sprite) => {
+                    this.setState({
+                      selectedTileId: undefined,
+                      selectedSpriteId: sprite.id,
+                      selectedItemId: undefined,
+                    });
+                  }}
+                  handleSelectItem={(item) => {
+                    this.setState({
+                      selectedTileId: undefined,
+                      selectedSpriteId: undefined,
+                      selectedItemId: item.id,
+                    });
+                  }}
 
-                handleSelectTile={(tile) => {
-                  this.setState({
-                    selectedTileId: tile.id,
-                    selectedSpriteId: undefined,
-                    selectedItemId: undefined,
-                  });
-                }}
-                handleSelectSprite={(sprite) => {
-                  this.setState({
-                    selectedTileId: undefined,
-                    selectedSpriteId: sprite.id,
-                    selectedItemId: undefined,
-                  });
-                }}
-                handleSelectItem={(item) => {
-                  this.setState({
-                    selectedTileId: undefined,
-                    selectedSpriteId: undefined,
-                    selectedItemId: item.id,
-                  });
-                }}
+                  handleDeleteTile={this.handleDeleteTile}
+                  handleDeleteSprite={this.handleDeleteSprite}
+                  handleDeleteItem={this.handleDeleteItem}
+                />}
+            </Card>
+          </VerticalContainer>
 
-                handleDeleteTile={this.handleDeleteTile}
-                handleDeleteSprite={this.handleDeleteSprite}
-                handleDeleteItem={this.handleDeleteItem}
-              />}
-          </Card>
-          {/*
-          <Card title="Tiles" width={256}>
-            {palette &&
-              <TileList
-                items={game.tiles}
-                bgColour={palette.bg}
-                fgColour={palette.tile}
-                selectedId={this.state.selectedTileId}
-                handleClick={(item) => {
-                  this.setState({
-                    selectedTileId: item.id,
-                    selectedSpriteId: undefined,
-                  });
+          <VerticalContainer>
+            <Card title="Palette" width={256}>
+              <PaletteEditor
+                palettes={game.palettes}
+                handleChange={() => null}
+              />
+            </Card>
+            <Card title="Game Data" width={256}>
+              <textarea
+                style={{
+                  width: '100%',
+                  height: '256px',
+                  backgroundColor: colours.bg2,
+                  color: colours.fg,
+                  border: `2px solid ${colours.fg2}`,
                 }}
-                handleDelete={this.handleDeleteTile}
-              />}
-          </Card>
-
-          <Card title="Sprites" width={256}>
-            {palette &&
-              <TileList
-                items={[...game.sprites, ...game.items]}
-                bgColour={palette.bg}
-                fgColour={palette.sprite}
-                selectedId={this.state.selectedSpriteId}
-                handleClick={(item) => {
-                  this.setState({
-                    selectedSpriteId: item.id,
-                    selectedTileId: undefined,
-                  });
+                value={this.state.rawGameData}
+                onChange={this.handleEditGameData}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  // tslint:disable-next-line:no-console
+                  console.log(serializeBitsy(this.state.game).join('\n'));
                 }}
-                handleDelete={this.handleDeleteSprite}
-              />}
-          </Card>
-          */}
-        </VerticalContainer>
-
-        <Card title="Game Data" width={256}>
-          <textarea
-            style={{ width: '100%', height: '256px' }}
-            value={this.state.rawGameData}
-            onChange={this.handleEditGameData}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              // tslint:disable-next-line:no-console
-              console.log(serializeBitsy(this.state.game).join('\n'));
-            }}
-          >
-            serialize
-          </button>
-        </Card>
+              >
+                serialize
+              </button>
+            </Card>
+          </VerticalContainer>
+        </div>
       </div>
     );
   }

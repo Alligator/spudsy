@@ -19,6 +19,10 @@ const StyledButton = styled.button`
   transform: scale(1);
   color: ${colours.fg};
 
+  & + & {
+    margin-left: 10px;
+  }
+
   &:hover {
     transform: scale(1.2);
   }

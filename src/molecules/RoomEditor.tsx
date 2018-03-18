@@ -5,6 +5,9 @@ import ListItemButton from '../atoms/ListItemButton';
 import Filterable from '../atoms/Filterable';
 import ImageEditor from '../atoms/ImageEditor';
 import formatId from '../formatId';
+import * as colours from '../colours';
+import { Input, Select } from '../atoms/Inputs';
+import FormGroup from '../atoms/FormGroup';
 
 class RoomFilterable extends Filterable<BitsyRoom> { }
 
@@ -18,6 +21,7 @@ type Props = {
   selectedSpriteId?: number,
   selectedItemId?: number,
   palette: BitsyPalette,
+  palettes: Array<BitsyPalette>,
   size: number,
   handleSelectRoom: (room: BitsyRoom) => void,
   handleEditRoom: (newRoom: BitsyRoom) => void,
@@ -49,6 +53,8 @@ class RoomEditor extends React.PureComponent<Props, State> {
     this.handleEdit = this.handleEdit.bind(this);
     this.handleEditEnd = this.handleEditEnd.bind(this);
     this.handleInspect = this.handleInspect.bind(this);
+    this.handleEditPalette = this.handleEditPalette.bind(this);
+    this.handleEditName = this.handleEditName.bind(this);
     this.getCellInfo = this.getCellInfo.bind(this);
     this.renderCell = this.renderCell.bind(this);
   }
@@ -184,6 +190,20 @@ class RoomEditor extends React.PureComponent<Props, State> {
     }
   }
 
+  handleEditPalette(evt: React.ChangeEvent<HTMLInputElement>) {
+    const newPaletteId = parseInt(evt.target.value, 10);
+    const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
+    const newRoom = Object.assign({}, selectedRoom, { paletteId: newPaletteId });
+    this.props.handleEditRoom(newRoom);
+  }
+
+  handleEditName(evt: React.ChangeEvent<HTMLInputElement>) {
+    const newName = evt.target.value;
+    const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
+    const newRoom = Object.assign({}, selectedRoom, { name: newName });
+    this.props.handleEditRoom(newRoom);
+  }
+
   getTileAtCoords(x: number, y: number): BitsyTile | null {
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     if (selectedRoom) {
@@ -248,22 +268,63 @@ class RoomEditor extends React.PureComponent<Props, State> {
   }
 
   render() {
+    const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     return (
       <div>
-        <ImageEditor
-          size={this.props.size}
-          tileCount={16}
-          bgColour={this.props.palette.bg}
-          fgColour={this.props.palette.tile}
-          renderCell={this.renderCell}
-          handleEditStart={this.handleEditStart}
-          handleEdit={this.handleEdit}
-          handleEditEnd={this.handleEditEnd}
-          handleInspect={this.handleInspect}
-          getCellInfo={this.getCellInfo}
-          canInspect={true}
-        />
+        {selectedRoom ?
+          <React.Fragment>
+            <ImageEditor
+              size={this.props.size}
+              tileCount={16}
+              bgColour={this.props.palette.bg}
+              fgColour={this.props.palette.tile}
+              renderCell={this.renderCell}
+              handleEditStart={this.handleEditStart}
+              handleEdit={this.handleEdit}
+              handleEditEnd={this.handleEditEnd}
+              handleInspect={this.handleInspect}
+              getCellInfo={this.getCellInfo}
+            />
+            <div style={{ display: 'flex', margin: '10px 0 20px 0', alignItems: 'flex-end' }}>
+              <FormGroup htmlFor="spudsy-room__name" label="Name">
+                <Input
+                  id="spudsy-room__name"
+                  type="text"
+                  value={selectedRoom.name}
+                  placeholder={selectedRoom.id.toString()}
+                  onChange={this.handleEditName}
+                />
+              </FormGroup>
 
+              <FormGroup htmlFor="spudsy-room__palette" label="Palette">
+                <Select
+                  id="spudsy-room__palette"
+                  value={this.props.palette.id}
+                  onChange={this.handleEditPalette}
+                >
+                  {this.props.palettes.map(palette => (
+                    <option value={palette.id}>{formatId(palette)}</option>
+                  ))}
+                </Select>
+              </FormGroup>
+
+              {/* <Button type="button">Clone</Button> */}
+            </div>
+          </React.Fragment> :
+          <div
+            style={{
+              // -4 to account for the border size
+              width: this.props.size - 4,
+              height: this.props.size - 4,
+              border: `2px solid ${colours.bg2}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colours.bg2,
+            }}
+          >
+            No room selected.
+          </div>}
         <div
           style={{
             display: 'flex',
@@ -293,6 +354,12 @@ class RoomEditor extends React.PureComponent<Props, State> {
                 <div style={{ flexGrow: 1 }}>
                   {formatId(room)}
                 </div>
+                <ListItemButton
+                  onClick={() => null}
+                  title="Clone room"
+                >
+                  <i className="fas fa-clone fa-lg" />
+                </ListItemButton>
                 <ListItemButton
                   onClick={this.props.handleDeleteRoom.bind(this, room)}
                   title="Delete room"

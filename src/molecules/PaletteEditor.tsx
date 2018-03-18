@@ -65,13 +65,18 @@ class PaletteEditor extends React.PureComponent<Props, State> {
       <div>
         {this.state.selectedPalette &&
           <Tabs
-            tabs={['bg', 'tile', 'sprite']}
+            tabs={['Background', 'Tile', 'Sprite']}
             renderTab={(tabName) => {
+              const mapping = {
+                'Background': 'bg',
+                'Tile': 'tile',
+                'Sprite': 'sprite',
+              };
               return (
                 <div style={{ marginBottom: '10px' }}>
                   {this.state.selectedPalette &&
                     <ColourPicker
-                      colour={this.state.selectedPalette[tabName]}
+                      colour={this.state.selectedPalette[mapping[tabName]]}
                       handleChange={this.handleColourChange}
                     />
                   }
