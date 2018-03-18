@@ -104,35 +104,35 @@ class TileEditor extends React.PureComponent<Props, State> {
               handleInspect={this.handleInspect}
               getCellInfo={this.getCellInfo}
             />
-            <div style={{ marginTop: '20px' }}>
-              <FormGroup htmlFor="spudsy-thing__name" label="Name">
-                <DebouncedInput
-                  id="spudy-thing__name"
-                  type="text"
-                  value={tile.name}
-                  placeholder={tile.id.toString()}
-                  onValueChange={this.handleEditName}
+            <FormGroup
+              htmlFor="spudsy-thing__name"
+              label="Name"
+              style={{ margin: '20px 0' }}
+            >
+              <DebouncedInput
+                id="spudy-thing__name"
+                type="text"
+                value={tile.name}
+                placeholder={tile.id.toString()}
+                onValueChange={this.handleEditName}
+              />
+            </FormGroup>
+            {this.props.tile.frames.map((frame, idx) => (
+              <ListItem
+                key={`${formatId(tile)} - ${idx}`}
+                onClick={() => { this.setState({ selectedFrame: idx }); }}
+                selected={this.state.selectedFrame === idx}
+              >
+                <Tile
+                  tile={tile}
+                  scale={4}
+                  bgColour={this.props.bgColour}
+                  fgColour={this.props.fgColour}
+                  frame={idx}
                 />
-              </FormGroup>
-              <FormGroup label="Frames" style={{ marginTop: '10px' }}>
-                {this.props.tile.frames.map((frame, idx) => (
-                  <ListItem
-                    key={`${formatId(tile)} - ${idx}`}
-                    onClick={() => { this.setState({ selectedFrame: idx }); }}
-                    selected={this.state.selectedFrame === idx}
-                  >
-                    <Tile
-                      tile={tile}
-                      scale={4}
-                      bgColour={this.props.bgColour}
-                      fgColour={this.props.fgColour}
-                      frame={idx}
-                    />
-                    <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
-                  </ListItem>
-                ))}
-              </FormGroup>
-            </div>
+                <div style={{ marginLeft: '10px' }}>Frame {idx}</div>
+              </ListItem>
+            ))}
           </React.Fragment>
           :
           <div
