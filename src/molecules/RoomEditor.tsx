@@ -158,6 +158,28 @@ class RoomEditor extends React.PureComponent<Props, State> {
             (prevState: State) => ({ ignoreEdits: true }),
           );
         }
+      } else {
+        if (foundSprite) {
+          // clicked on a sprite with nothing selected, remove that sprite and ignore editing until mouseup
+          const newSprite = Object.assign({}, foundSprite, { pos: null });
+          this.props.handleEditSprite(newSprite);
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else if (foundItem) {
+          // clicked on an item with nothing selected, remove that item and ignore editing until mouseup
+          const newItems = selectedRoom.items.filter(item => item.id !== foundItem.id || item.x !== x || item.y !== y);
+          this.props.handleEditRoom(Object.assign({}, selectedRoom, { items: newItems }));
+          this.setState(
+            (prevState: State) => ({ ignoreEdits: true }),
+          );
+        } else if (foundTile) {
+          // clicked on a tile with nothing selected, start removing tiles
+          this.setState(
+            (prevState: State) => ({ addingTiles: false }),
+            () => this.handleEdit(x, y),
+          );
+        }
       }
     }
   }
@@ -328,59 +350,61 @@ class RoomEditor extends React.PureComponent<Props, State> {
           >
             No room selected.
           </div>}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            marginTop: '5px',
-            maxHeight: '252px',
-            overflowY: 'auto'
-          }}
-        >
-          <RoomFilterable
-            items={this.props.rooms}
-            getKey={room => formatId(room)}
-            render={rooms => rooms.map((room: BitsyRoom) => {
-              const roomPalette = this.props.palettes.filter(palette => palette.id === room.paletteId)[0];
-              return (
-                <ListItem
-                  key={room.id}
-                  selected={
-                    typeof this.props.selectedRoomId === 'number'
-                      ? (this.props.selectedRoomId === room.id)
-                      : false
-                  }
-                  style={{
-                    padding: '0 10px 0 0',
-                    display: 'flex',
-                  }}
-                  onClick={this.props.handleSelectRoom.bind(this, room)}
-                >
-                  {roomPalette &&
-                    <RoomPreview
-                      room={room}
-                      palette={roomPalette}
-                    />}
-                  <div style={{ flexGrow: 1, marginLeft: '10px' }}>
-                    {formatId(room)}
-                  </div>
-                  <ListItemButton
-                    onClick={this.props.handleCloneRoom.bind(this, room)}
-                    title="Clone room"
+        <RoomFilterable
+          items={this.props.rooms}
+          getKey={room => formatId(room)}
+          render={rooms => (
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                marginTop: '5px',
+                maxHeight: '252px',
+                overflowY: 'auto'
+              }}
+            >
+              {rooms.map((room: BitsyRoom) => {
+                const roomPalette = this.props.palettes.filter(palette => palette.id === room.paletteId)[0];
+                return (
+                  <ListItem
+                    key={room.id}
+                    selected={
+                      typeof this.props.selectedRoomId === 'number'
+                        ? (this.props.selectedRoomId === room.id)
+                        : false
+                    }
+                    style={{
+                      padding: '0 10px 0 0',
+                      display: 'flex',
+                    }}
+                    onClick={this.props.handleSelectRoom.bind(this, room)}
                   >
-                    <i className="fas fa-clone fa-lg" />
-                  </ListItemButton>
-                  <ListItemButton
-                    onClick={this.props.handleDeleteRoom.bind(this, room)}
-                    title="Delete room"
-                  >
-                    <i className="fas fa-trash-alt fa-lg" />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          />
-        </div>
+                    {roomPalette &&
+                      <RoomPreview
+                        room={room}
+                        palette={roomPalette}
+                      />}
+                    <div style={{ flexGrow: 1, marginLeft: '10px' }}>
+                      {formatId(room)}
+                    </div>
+                    <ListItemButton
+                      onClick={this.props.handleCloneRoom.bind(this, room)}
+                      title="Clone room"
+                    >
+                      <i className="fas fa-clone fa-lg" />
+                    </ListItemButton>
+                    <ListItemButton
+                      onClick={this.props.handleDeleteRoom.bind(this, room)}
+                      title="Delete room"
+                    >
+                      <i className="fas fa-trash-alt fa-lg" />
+                    </ListItemButton>
+                  </ListItem>
+                );
+              })}
+            </div>
+          )}
+        />
         <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
           <Button onClick={this.props.handleAddRoom}>
             Add new

@@ -25,44 +25,46 @@ const TileList = (props: Props) => {
   });
 
   return (
-    <div
-      style={{
-        height: '288px',
-        display: 'flex',
-        flexDirection: 'column',
-        overflowY: 'auto',
-      }}
-    >
-      <TileFilterable
-        items={sortedTiles}
-        getKey={tile => formatId(tile)}
-        render={tiles => tiles.map((tile) => (
-          <ListItem
-            key={tile.id}
-            onClick={() => { props.handleClick(tile); }}
-            selected={props.selectedId === tile.id}
-            style={{ display: 'flex', paddingRight: '10px' }}
-          >
-            <Tile
-              tile={tile}
-              scale={4}
-              bgColour={props.bgColour}
-              fgColour={props.fgColour}
-              frame={0}
-            />
-            <div style={{ marginLeft: '10px', flexGrow: 1 }}>
-              {formatId(tile)}
-            </div>
-            <ListItemButton
-              onClick={props.handleDelete.bind(null, tile)}
-              title="Delete room"
+    <TileFilterable
+      items={sortedTiles}
+      getKey={tile => formatId(tile)}
+      render={tiles => (
+        <div
+          style={{
+            height: '288px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+          }}
+        >
+          {tiles.map((tile) => (
+            <ListItem
+              key={tile.id}
+              onClick={() => { props.handleClick(tile); }}
+              selected={props.selectedId === tile.id}
+              style={{ display: 'flex', paddingRight: '10px' }}
             >
-              <i className="fas fa-trash-alt fa-lg" />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      />
-    </div>
+              <Tile
+                tile={tile}
+                scale={4}
+                bgColour={props.bgColour}
+                fgColour={props.fgColour}
+                frame={0}
+              />
+              <div style={{ marginLeft: '10px', flexGrow: 1 }}>
+                {formatId(tile)}
+              </div>
+              <ListItemButton
+                onClick={props.handleDelete.bind(null, tile)}
+                title="Delete room"
+              >
+                <i className="fas fa-trash-alt fa-lg" />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </div>
+      )}
+    />
   );
 };
 
