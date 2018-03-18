@@ -1,5 +1,6 @@
 import * as React from 'react';
 import styled from 'react-emotion';
+import { cloneDeep } from 'lodash';
 import parseBitsy, {
   BitsyGame,
   BitsyTile,
@@ -20,6 +21,8 @@ import formatId from './formatId';
 import ThingsEditor from './molecules/ThingsEditor';
 import * as colours from './colours';
 import { Button } from './atoms/Inputs';
+import ListItem from './atoms/ListItem';
+import ListemItemButton from './atoms/ListItemButton';
 
 const VerticalContainer = styled('div') `
   display: flex;
@@ -27,14 +30,25 @@ const VerticalContainer = styled('div') `
   height: 100%;
 `;
 
+const MAX_UNDO_HISTORY = 10;
+
+type UndoAction = {
+  game: BitsyGame,
+  name: string,
+  timestamp: Date,
+};
+
 type Props = {};
 type State = {
   game: BitsyGame,
+  previousGames: Array<UndoAction>,
   selectedRoomId?: number,
   selectedTileId?: number,
   selectedSpriteId?: number,
   selectedItemId?: number,
   rawGameData: string,
+  ctrlHeld: boolean,
+  zHeld: boolean,
 };
 
 /*
@@ -58,7 +72,10 @@ class App extends React.Component<Props, State> {
         startingItems: [],
         variables: {},
       },
+      previousGames: [],
       rawGameData: '',
+      ctrlHeld: false,
+      zHeld: false,
     };
 
     this.handleTileChange = this.handleTileChange.bind(this);
@@ -74,6 +91,10 @@ class App extends React.Component<Props, State> {
     this.handleCloneRoom = this.handleCloneRoom.bind(this);
 
     this.handleEditSprite = this.handleEditSprite.bind(this);
+
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleKeyUp = this.handleKeyUp.bind(this);
+    this.handleUndo = this.handleUndo.bind(this);
   }
 
   componentDidMount() {
@@ -81,6 +102,9 @@ class App extends React.Component<Props, State> {
     if (gameData) {
       this.parseGame(gameData);
     }
+
+    document.addEventListener('keydown', this.handleKeyDown);
+    document.addEventListener('keyup', this.handleKeyUp);
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
@@ -88,16 +112,75 @@ class App extends React.Component<Props, State> {
     console.error(info);
   }
 
-  handleTileChange(newThing: BitsyDrawable) {
-    const foundTile = this.findThing(this.state.game.tiles, newThing.id);
-    const foundSprite = this.findThing(this.state.game.tiles, newThing.id);
+  handleKeyDown(evt: KeyboardEvent) {
+    switch (evt.which) {
+      // ctrl
+      case 17: {
+        this.setState((prevState: State) => ({ ctrlHeld: true }));
+        break;
+      }
+      // z
+      case 90: {
+        if (this.state.ctrlHeld && !this.state.zHeld) {
+          const prevGames = this.state.previousGames.slice();
+          const prevGame = prevGames.pop();
+          if (prevGame) {
+            this.setState((prevState: State) => ({
+              zHeld: true,
+              game: prevGame.game,
+              previousGames: prevGames,
+            }));
+          }
+        }
+        break;
+      }
+      default:
+        break;
+    }
+  }
 
-    if (foundTile) {
+  handleKeyUp(evt: KeyboardEvent) {
+    switch (evt.which) {
+      // ctrl
+      case 17: {
+        this.setState((prevState: State) => ({ ctrlHeld: false }));
+        break;
+      }
+      // z
+      case 90: {
+        this.setState((prevState: State) => ({ zHeld: false }));
+        break;
+      }
+      default:
+        break;
+    }
+  }
+
+  handleUndo(index: number) {
+    // the index we get here is reversed, since the list is drawn in reverse order
+    this.setState((prevState: State) => {
+      const newPrevGames = prevState.previousGames.slice(0, prevState.previousGames.length - index);
+      const newGame = newPrevGames.pop();
+      if (newGame) {
+        return {
+          previousGames: newPrevGames,
+          game: newGame.game,
+        };
+      }
+      return prevState;
+    });
+  }
+
+  handleTileChange(newThing: BitsyDrawable) {
+    if (typeof this.state.selectedTileId === 'number') {
       const newThings = this.state.game.tiles.map((tile) => tile.id === newThing.id ? newThing : tile);
-      this.setState({ game: Object.assign({}, this.state.game, { tiles: newThings }) });
-    } else if (foundSprite) {
+      this.updateGame(Object.assign({}, this.state.game, { tiles: newThings }), 'Edited tile');
+    } else if (typeof this.state.selectedSpriteId === 'number') {
       const newSprites = this.state.game.sprites.map((sprite) => sprite.id === newThing.id ? newThing : sprite);
-      this.setState({ game: Object.assign({}, this.state.game, { sprites: newSprites }) });
+      this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Edited sprite');
+    } else if (typeof this.state.selectedItemId === 'number') {
+      const newItems = this.state.game.items.map((item) => item.id === newThing.id ? newThing : item);
+      this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Edited item');
     }
   }
 
@@ -107,7 +190,7 @@ class App extends React.Component<Props, State> {
       .then((willDelete) => {
         if (willDelete) {
           const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
-          this.setState({ game: Object.assign({}, this.state.game, { tiles: newTiles }) });
+          this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Deleted tile');
         }
       });
   }
@@ -117,7 +200,7 @@ class App extends React.Component<Props, State> {
       .then((willDelete) => {
         if (willDelete) {
           const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
-          this.setState({ game: Object.assign({}, this.state.game, { sprites: newSprites }) });
+          this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Deleted sprite');
         }
       });
   }
@@ -128,7 +211,7 @@ class App extends React.Component<Props, State> {
       .then((willDelete) => {
         if (willDelete) {
           const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
-          this.setState({ game: Object.assign({}, this.state.game, { items: newItems }) });
+          this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Deleted item');
         }
       });
   }
@@ -140,7 +223,7 @@ class App extends React.Component<Props, State> {
       return room;
     });
 
-    this.setState({ game: Object.assign({}, this.state.game, { rooms: newRooms }) });
+    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Edited room');
   }
 
   handleDeleteRoom(roomToDelete: BitsyRoom) {
@@ -148,7 +231,7 @@ class App extends React.Component<Props, State> {
       .then((willDelete) => {
         if (willDelete) {
           const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
-          this.setState({ game: Object.assign({}, this.state.game, { rooms: newRooms }) });
+          this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Deleted room');
         }
       });
     return;
@@ -169,10 +252,8 @@ class App extends React.Component<Props, State> {
     const newRooms = this.state.game.rooms.slice();
     newRooms.push(newRoom);
 
-    this.setState({
-      game: Object.assign({}, this.state.game, { rooms: newRooms }),
-      selectedRoomId: newRoom.id,
-    });
+    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Added room');
+    this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
   }
 
   handleCloneRoom(roomToClone: BitsyRoom) {
@@ -184,10 +265,8 @@ class App extends React.Component<Props, State> {
     const newRooms = this.state.game.rooms.slice();
     newRooms.push(newRoom);
 
-    this.setState({
-      game: Object.assign({}, this.state.game, { rooms: newRooms }),
-      selectedRoomId: newRoom.id,
-    });
+    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Cloned room');
+    this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
   }
 
   handleEditSprite(newSprite: BitsySprite) {
@@ -198,7 +277,7 @@ class App extends React.Component<Props, State> {
       return sprite;
     });
 
-    this.setState({ game: Object.assign({}, this.state.game, { sprites: newSprites }) });
+    this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Moved sprite');
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -222,11 +301,32 @@ class App extends React.Component<Props, State> {
 
   parseGame(rawData: string) {
     const parsedGame = parseBitsy(rawData);
-    // tslint:disable-next-line:no-console
     console.log(parsedGame);
+
     this.setState({
       game: parsedGame,
       rawGameData: rawData,
+    });
+  }
+
+  updateGame(newGame: BitsyGame, action: string) {
+    this.setState((prevState: State) => {
+      let newPrevGames = prevState.previousGames.slice();
+
+      if (prevState.previousGames.length >= MAX_UNDO_HISTORY) {
+        newPrevGames = newPrevGames.splice(1);
+      }
+
+      newPrevGames.push({
+        game: cloneDeep(prevState.game),
+        name: action,
+        timestamp: new Date(),
+      });
+
+      return {
+        game: newGame,
+        previousGames: newPrevGames,
+      };
     });
   }
 
@@ -371,6 +471,41 @@ class App extends React.Component<Props, State> {
                 handleChange={() => null}
               />
             </Card>
+
+            <Card title="Actions" width={256}>
+              <div
+                style={{
+                  height: '288px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflowY: 'auto',
+                  marginBottom: '10px',
+                }}
+              >
+                {this.state.previousGames.slice().reverse().map((action, idx) => (
+                  <ListItem
+                    selected={idx === 0}
+                    style={{
+                      padding: '0 10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                      <div style={{ fontSize: '8pt', color: colours.fg1 }}>
+                        {action.timestamp.toLocaleTimeString()}
+                      </div>
+                      {action.name}
+                    </div>
+                    <ListemItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
+                      <i className="fa fa-undo fa-lg" />
+                    </ListemItemButton>
+                  </ListItem>
+                ))}
+              </div>
+              <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
+            </Card>
+
             <Card title="Game Data" width={256}>
               <textarea
                 style={{

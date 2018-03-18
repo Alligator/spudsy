@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { cloneDeep } from 'lodash';
 import { BitsyDrawable } from '../bitsy-parser';
 import ImageEditor from '../atoms/ImageEditor';
 import ListItem from '../atoms/ListItem';
@@ -56,7 +57,7 @@ class TileEditor extends React.PureComponent<Props, State> {
   }
 
   handleEdit(x: number, y: number) {
-    const newFrames = this.props.tile.frames.slice();
+    const newFrames = cloneDeep(this.props.tile.frames);
     newFrames[this.state.selectedFrame][x + y * this.props.tileCount] = this.state.changingCellsTo;
     this.props.handleChange(Object.assign({}, this.props.tile, { frames: newFrames }));
   }
