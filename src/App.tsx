@@ -24,6 +24,7 @@ import * as colours from './colours';
 import { Button } from './atoms/Inputs';
 import ListItem from './atoms/ListItem';
 import ListemItemButton from './atoms/ListItemButton';
+import * as ReactDOM from 'react-dom';
 
 const VerticalContainer = styled('div') `
   display: flex;
@@ -113,8 +114,45 @@ class App extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // tslint:disable-next-line:no-console
-    console.error(info);
+    const node = document.createElement('div');
+    ReactDOM.render(
+      (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ margin: '10px 0' }}>
+            Oh no. Spudsy crashed. Here is your game data:
+          </div>
+          <textarea
+            style={{
+              flexGrow: 1,
+              height: '128px',
+              backgroundColor: colours.bg2,
+              color: colours.fg,
+              border: `2px solid ${colours.fg2}`,
+            }}
+            value={serializeBitsy(this.state.game).join('\n')}
+          />
+          <div style={{ margin: '10px 0' }}>
+            Error information:
+          </div>
+          <textarea
+            style={{
+              flexGrow: 1,
+              height: '128px',
+              backgroundColor: colours.bg2,
+              color: colours.fg,
+              border: `2px solid ${colours.fg2}`,
+            }}
+            value={`${error.toString()}${info.componentStack}`}
+          />
+        </div>
+      ),
+      node,
+    );
+
+    swal({
+      title: 'Crash!',
+      content: { element: node },
+    });
   }
 
   handleKeyDown(evt: KeyboardEvent) {

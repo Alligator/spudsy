@@ -14,7 +14,7 @@ const CardContainer = styled<{ width: number }, 'div'>('div')`
   border-radius: 5px;
   background-color: ${colours.bg1};
   box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
-  margin: 10px 10px 0 10px;
+  margin: 10px;
 
   display: flex;
   flex-direction: column;
