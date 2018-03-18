@@ -19,8 +19,9 @@ import swal from 'sweetalert';
 import formatId from './formatId';
 import ThingsEditor from './molecules/ThingsEditor';
 import * as colours from './colours';
+import { Button } from './atoms/Inputs';
 
-const VerticalContainer = styled('div')`
+const VerticalContainer = styled('div') `
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -69,6 +70,9 @@ class App extends React.Component<Props, State> {
     this.handleDeleteSprite = this.handleDeleteSprite.bind(this);
     this.handleDeleteItem = this.handleDeleteItem.bind(this);
 
+    this.handleAddRoom = this.handleAddRoom.bind(this);
+    this.handleCloneRoom = this.handleCloneRoom.bind(this);
+
     this.handleEditSprite = this.handleEditSprite.bind(this);
   }
 
@@ -99,12 +103,7 @@ class App extends React.Component<Props, State> {
 
   handleDeleteTile(thingToDelete: BitsyDrawable) {
     // TODO: tidy up any rooms that have this tile
-    swal({
-      title: `Delete tile "${formatId(thingToDelete)}"?`,
-      text: 'This cannot be undone!',
-      icon: 'warning',
-      dangerMode: true,
-    })
+    this.showDeletePrompt(`Delete tile "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
           const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
@@ -114,12 +113,7 @@ class App extends React.Component<Props, State> {
   }
 
   handleDeleteSprite(thingToDelete: BitsyDrawable) {
-    swal({
-      title: `Delete sprite "${formatId(thingToDelete)}"?`,
-      text: 'This cannot be undone!',
-      icon: 'warning',
-      dangerMode: true,
-    })
+    this.showDeletePrompt(`Delete sprite "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
           const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
@@ -130,12 +124,7 @@ class App extends React.Component<Props, State> {
 
   handleDeleteItem(thingToDelete: BitsyDrawable) {
     // TODO: tidy up any rooms that have this item
-    swal({
-      title: `Delete item "${formatId(thingToDelete)}"?`,
-      text: 'This cannot be undone!',
-      icon: 'warning',
-      dangerMode: true,
-    })
+    this.showDeletePrompt(`Delete item "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
           const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
@@ -155,12 +144,7 @@ class App extends React.Component<Props, State> {
   }
 
   handleDeleteRoom(roomToDelete: BitsyRoom) {
-    swal({
-      title: `Delete room "${formatId(roomToDelete)}"?`,
-      text: 'This cannot be undone!',
-      icon: 'warning',
-      dangerMode: true,
-    })
+    this.showDeletePrompt(`Delete room "${formatId(roomToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
           const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
@@ -168,6 +152,42 @@ class App extends React.Component<Props, State> {
         }
       });
     return;
+  }
+
+  handleAddRoom() {
+    const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
+    const newRoom: BitsyRoom = {
+      id: maxId + 1,
+      name: '',
+      tiles: [],
+      items: [],
+      exits: [],
+      endings: [],
+      paletteId: 0,
+    };
+
+    const newRooms = this.state.game.rooms.slice();
+    newRooms.push(newRoom);
+
+    this.setState({
+      game: Object.assign({}, this.state.game, { rooms: newRooms }),
+      selectedRoomId: newRoom.id,
+    });
+  }
+
+  handleCloneRoom(roomToClone: BitsyRoom) {
+    const newRoom = Object.assign({}, roomToClone);
+
+    const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
+    newRoom.id = maxId + 1;
+
+    const newRooms = this.state.game.rooms.slice();
+    newRooms.push(newRoom);
+
+    this.setState({
+      game: Object.assign({}, this.state.game, { rooms: newRooms }),
+      selectedRoomId: newRoom.id,
+    });
   }
 
   handleEditSprite(newSprite: BitsySprite) {
@@ -185,6 +205,19 @@ class App extends React.Component<Props, State> {
     const data = evt.target.value;
     localStorage.setItem('bitsyGame', data);
     this.parseGame(data);
+  }
+
+  showDeletePrompt(title: string) {
+    return swal({
+      title,
+      text: 'This cannot be undone!',
+      icon: 'warning',
+      dangerMode: true,
+      buttons: {
+        cancel: true,
+        confirm: true,
+      },
+    });
   }
 
   parseGame(rawData: string) {
@@ -261,11 +294,16 @@ class App extends React.Component<Props, State> {
                   tiles={game.tiles}
                   sprites={game.sprites}
                   items={game.items}
+
                   selectedTileId={this.state.selectedTileId}
                   selectedSpriteId={this.state.selectedSpriteId}
                   selectedItemId={this.state.selectedItemId}
+
                   handleEditRoom={this.handleEditRoom}
                   handleDeleteRoom={this.handleDeleteRoom}
+                  handleAddRoom={this.handleAddRoom}
+                  handleCloneRoom={this.handleCloneRoom}
+
                   handleEditSprite={this.handleEditSprite}
                   handleSelectTile={(tile) => {
                     this.setState({ selectedTileId: tile.id });
@@ -345,15 +383,19 @@ class App extends React.Component<Props, State> {
                 value={this.state.rawGameData}
                 onChange={this.handleEditGameData}
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => {
-                  // tslint:disable-next-line:no-console
-                  console.log(serializeBitsy(this.state.game).join('\n'));
+                  console.groupCollapsed(this.state.game.title);
+                  const serializedGame = serializeBitsy(this.state.game).join('\n');
+                  // tslint:disable-next-line:no-any
+                  (window as any).serializedGame = serializedGame;
+                  console.log(serializedGame);
+                  console.groupEnd();
                 }}
               >
                 serialize
-              </button>
+              </Button>
             </Card>
           </VerticalContainer>
         </div>

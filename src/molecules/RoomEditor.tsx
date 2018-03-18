@@ -6,8 +6,9 @@ import Filterable from '../atoms/Filterable';
 import ImageEditor from '../atoms/ImageEditor';
 import formatId from '../formatId';
 import * as colours from '../colours';
-import { Input, Select } from '../atoms/Inputs';
+import { Input, Select, Button } from '../atoms/Inputs';
 import FormGroup from '../atoms/FormGroup';
+import RoomPreview from '../atoms/RoomPreview';
 
 class RoomFilterable extends Filterable<BitsyRoom> { }
 
@@ -26,6 +27,8 @@ type Props = {
   handleSelectRoom: (room: BitsyRoom) => void,
   handleEditRoom: (newRoom: BitsyRoom) => void,
   handleDeleteRoom: (room: BitsyRoom) => void,
+  handleCloneRoom: (room: BitsyRoom) => void,
+  handleAddRoom: () => void,
   handleEditSprite: (sprite: BitsySprite) => void,
   handleSelectTile: (tile: BitsyTile) => void,
 };
@@ -337,38 +340,51 @@ class RoomEditor extends React.PureComponent<Props, State> {
           <RoomFilterable
             items={this.props.rooms}
             getKey={room => formatId(room)}
-            render={rooms => rooms.map((room: BitsyRoom) => (
-              <ListItem
-                key={room.id}
-                selected={
-                  typeof this.props.selectedRoomId === 'number'
-                    ? (this.props.selectedRoomId === room.id)
-                    : false
-                }
-                style={{
-                  padding: '0 10px',
-                  display: 'flex',
-                }}
-                onClick={this.props.handleSelectRoom.bind(this, room)}
-              >
-                <div style={{ flexGrow: 1 }}>
-                  {formatId(room)}
-                </div>
-                <ListItemButton
-                  onClick={() => null}
-                  title="Clone room"
+            render={rooms => rooms.map((room: BitsyRoom) => {
+              const roomPalette = this.props.palettes.filter(palette => palette.id === room.paletteId)[0];
+              return (
+                <ListItem
+                  key={room.id}
+                  selected={
+                    typeof this.props.selectedRoomId === 'number'
+                      ? (this.props.selectedRoomId === room.id)
+                      : false
+                  }
+                  style={{
+                    padding: '0 10px 0 0',
+                    display: 'flex',
+                  }}
+                  onClick={this.props.handleSelectRoom.bind(this, room)}
                 >
-                  <i className="fas fa-clone fa-lg" />
-                </ListItemButton>
-                <ListItemButton
-                  onClick={this.props.handleDeleteRoom.bind(this, room)}
-                  title="Delete room"
-                >
-                  <i className="fas fa-trash-alt fa-lg" />
-                </ListItemButton>
-              </ListItem>
-            ))}
+                  {roomPalette &&
+                    <RoomPreview
+                      room={room}
+                      palette={roomPalette}
+                    />}
+                  <div style={{ flexGrow: 1, marginLeft: '10px' }}>
+                    {formatId(room)}
+                  </div>
+                  <ListItemButton
+                    onClick={this.props.handleCloneRoom.bind(this, room)}
+                    title="Clone room"
+                  >
+                    <i className="fas fa-clone fa-lg" />
+                  </ListItemButton>
+                  <ListItemButton
+                    onClick={this.props.handleDeleteRoom.bind(this, room)}
+                    title="Delete room"
+                  >
+                    <i className="fas fa-trash-alt fa-lg" />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           />
+        </div>
+        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={this.props.handleAddRoom}>
+            Add new
+          </Button>
         </div>
       </div>
     );
