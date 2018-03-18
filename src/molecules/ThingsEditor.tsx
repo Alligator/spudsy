@@ -2,6 +2,7 @@ import * as React from 'react';
 import { BitsyPalette, BitsyTile, BitsySprite, BitsyItem } from '../bitsy-parser';
 import Tabs from '../atoms/Tabs';
 import TileList from './TileList';
+import { Button } from '../atoms/Inputs';
 
 type Props = {
   palette: BitsyPalette,
@@ -16,6 +17,10 @@ type Props = {
   handleSelectSprite: (sprite: BitsySprite) => void,
   handleSelectItem: (item: BitsyItem) => void,
 
+  handleAddTile: () => void,
+  handleAddSprite: () => void,
+  handleAddItem: () => void,
+
   handleDeleteTile: (tile: BitsyTile) => void,
   handleDeleteSprite: (sprite: BitsySprite) => void,
   handleDeleteItem: (item: BitsyItem) => void,
@@ -24,40 +29,59 @@ type Props = {
 class ThingsEditor extends React.PureComponent<Props, {}> {
   renderTiles() {
     return (
-      <TileList
-        items={this.props.tiles}
-        bgColour={this.props.palette.bg}
-        fgColour={this.props.palette.tile}
-        selectedId={this.props.selectedTileId}
-        handleClick={(item) => { this.props.handleSelectTile(item as BitsyTile); }}
-        handleDelete={(item) => { this.props.handleDeleteTile(item as BitsyTile); }}
-      />
+      <div>
+        <TileList
+          items={this.props.tiles}
+          bgColour={this.props.palette.bg}
+          fgColour={this.props.palette.tile}
+          selectedId={this.props.selectedTileId}
+          handleClick={(item) => { this.props.handleSelectTile(item as BitsyTile); }}
+          handleDelete={(item) => { this.props.handleDeleteTile(item as BitsyTile); }}
+        />
+        {this.renderAddButton('tile', this.props.handleAddTile)}
+      </div>
     );
   }
 
   renderSprites() {
     return (
-      <TileList
-        items={this.props.sprites}
-        bgColour={this.props.palette.bg}
-        fgColour={this.props.palette.sprite}
-        selectedId={this.props.selectedSpriteId}
-        handleClick={(item) => { this.props.handleSelectSprite(item as BitsySprite); }}
-        handleDelete={(item) => { this.props.handleDeleteSprite(item as BitsySprite); }}
-      />
+      <div>
+        <TileList
+          items={this.props.sprites}
+          bgColour={this.props.palette.bg}
+          fgColour={this.props.palette.sprite}
+          selectedId={this.props.selectedSpriteId}
+          handleClick={(item) => { this.props.handleSelectSprite(item as BitsySprite); }}
+          handleDelete={(item) => { this.props.handleDeleteSprite(item as BitsySprite); }}
+        />
+        {this.renderAddButton('sprite', this.props.handleAddSprite)}
+      </div>
     );
   }
 
   renderItems() {
     return (
-      <TileList
-        items={this.props.items}
-        bgColour={this.props.palette.bg}
-        fgColour={this.props.palette.sprite}
-        selectedId={this.props.selectedItemId}
-        handleClick={(item) => { this.props.handleSelectItem(item as BitsyItem); }}
-        handleDelete={(item) => { this.props.handleDeleteItem(item as BitsyItem); }}
-      />
+      <div>
+        <TileList
+          items={this.props.items}
+          bgColour={this.props.palette.bg}
+          fgColour={this.props.palette.sprite}
+          selectedId={this.props.selectedItemId}
+          handleClick={(item) => { this.props.handleSelectItem(item as BitsyItem); }}
+          handleDelete={(item) => { this.props.handleDeleteItem(item as BitsyItem); }}
+        />
+        {this.renderAddButton('item', this.props.handleAddItem)}
+      </div>
+    );
+  }
+
+  renderAddButton(title: string, onClick: () => void) {
+    return (
+      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+        <Button onClick={onClick}>
+          Add new {title}
+        </Button>
+      </div>
     );
   }
 

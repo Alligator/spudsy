@@ -10,6 +10,7 @@ import parseBitsy, {
   serializeBitsy,
   BitsyDrawable,
   BitsySprite,
+  BitsyItem,
 } from './bitsy-parser';
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
@@ -86,6 +87,10 @@ class App extends React.Component<Props, State> {
     this.handleDeleteTile = this.handleDeleteTile.bind(this);
     this.handleDeleteSprite = this.handleDeleteSprite.bind(this);
     this.handleDeleteItem = this.handleDeleteItem.bind(this);
+
+    this.handleAddTile = this.handleAddTile.bind(this);
+    this.handleAddSprite = this.handleAddSprite.bind(this);
+    this.handleAddItem = this.handleAddItem.bind(this);
 
     this.handleAddRoom = this.handleAddRoom.bind(this);
     this.handleCloneRoom = this.handleCloneRoom.bind(this);
@@ -237,6 +242,61 @@ class App extends React.Component<Props, State> {
     return;
   }
 
+  handleAddTile() {
+    const maxId = Math.max.apply(Math, this.state.game.tiles.map(thing => thing.id));
+    const newTile: BitsyTile = {
+      id: maxId + 1,
+      name: '',
+      frames: [[]],
+      isTile: true,
+      wall: false,
+    };
+    const newTiles = [...this.state.game.tiles, newTile];
+
+    this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Added tile');
+    this.setState((prevState: State) => ({
+      selectedTileId: newTile.id,
+      selectedSpriteId: undefined,
+      selectedItemId: undefined,
+    }));
+  }
+
+  handleAddSprite() {
+    const maxId = Math.max.apply(Math, this.state.game.sprites.map(thing => thing.id));
+    const newSprite: BitsySprite = {
+      id: maxId + 1,
+      name: '',
+      isPlayer: false,
+      frames: [[]]
+    };
+    const newSprites = [...this.state.game.sprites, newSprite];
+
+    this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Added tile');
+    this.setState((prevState: State) => ({
+      selectedTileId: undefined,
+      selectedSpriteId: newSprite.id,
+      selectedItemId: undefined,
+    }));
+  }
+
+  handleAddItem() {
+    const maxId = Math.max.apply(Math, this.state.game.items.map(thing => thing.id));
+    const newItem: BitsyItem = {
+      id: maxId + 1,
+      name: '',
+      frames: [[]],
+    };
+    const newItems = [...this.state.game.items, newItem];
+
+    this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Added tile');
+    this.setState((prevState: State) => ({
+      selectedTileId: undefined,
+      selectedSpriteId: undefined,
+      selectedItemId: newItem.id,
+    }));
+
+  }
+
   handleAddRoom() {
     const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
     const newRoom: BitsyRoom = {
@@ -380,11 +440,11 @@ class App extends React.Component<Props, State> {
         </h1>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
           <VerticalContainer>
-            <Card title={`Room ${selectedRoom ? formatId(selectedRoom) : 'Editor'}`} width={512}>
+            <Card title={`Room ${selectedRoom ? formatId(selectedRoom) : 'Editor'}`} width={384}>
               {palette &&
                 <RoomEditor
                   rooms={game.rooms}
-                  size={512}
+                  size={384}
                   selectedRoomId={this.state.selectedRoomId}
                   handleSelectRoom={(room) => {
                     this.setState({ selectedRoomId: room.id });
@@ -460,6 +520,10 @@ class App extends React.Component<Props, State> {
                   handleDeleteTile={this.handleDeleteTile}
                   handleDeleteSprite={this.handleDeleteSprite}
                   handleDeleteItem={this.handleDeleteItem}
+
+                  handleAddTile={this.handleAddTile}
+                  handleAddSprite={this.handleAddSprite}
+                  handleAddItem={this.handleAddItem}
                 />}
             </Card>
           </VerticalContainer>
@@ -505,7 +569,9 @@ class App extends React.Component<Props, State> {
               </div>
               <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
             </Card>
+          </VerticalContainer>
 
+          <VerticalContainer>
             <Card title="Game Data" width={256}>
               <textarea
                 style={{

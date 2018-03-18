@@ -31,7 +31,7 @@ const TileList = (props: Props) => {
       render={tiles => (
         <div
           style={{
-            height: '288px',
+            height: '273px',
             display: 'flex',
             flexDirection: 'column',
             overflowY: 'auto',

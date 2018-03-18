@@ -6,7 +6,7 @@ import Filterable from '../atoms/Filterable';
 import ImageEditor from '../atoms/ImageEditor';
 import formatId from '../formatId';
 import * as colours from '../colours';
-import { Input, Select, Button } from '../atoms/Inputs';
+import { DebouncedInput, Select, Button } from '../atoms/Inputs';
 import FormGroup from '../atoms/FormGroup';
 import RoomPreview from '../atoms/RoomPreview';
 
@@ -222,8 +222,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
     this.props.handleEditRoom(newRoom);
   }
 
-  handleEditName(evt: React.ChangeEvent<HTMLInputElement>) {
-    const newName = evt.target.value;
+  handleEditName(newName: string) {
     const selectedRoom = this.props.rooms.filter(room => room.id === this.props.selectedRoomId)[0];
     const newRoom = Object.assign({}, selectedRoom, { name: newName });
     this.props.handleEditRoom(newRoom);
@@ -312,12 +311,12 @@ class RoomEditor extends React.PureComponent<Props, State> {
             />
             <div style={{ display: 'flex', margin: '10px 0 20px 0', alignItems: 'flex-end' }}>
               <FormGroup htmlFor="spudsy-room__name" label="Name">
-                <Input
+                <DebouncedInput
                   id="spudsy-room__name"
                   type="text"
                   value={selectedRoom.name}
                   placeholder={selectedRoom.id.toString()}
-                  onChange={this.handleEditName}
+                  onValueChange={this.handleEditName}
                 />
               </FormGroup>
 
@@ -359,7 +358,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
                 display: 'flex',
                 flexDirection: 'column',
                 marginTop: '5px',
-                maxHeight: '252px',
+                maxHeight: '242px',
                 overflowY: 'auto'
               }}
             >

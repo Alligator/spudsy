@@ -6,6 +6,8 @@ import ListItem from '../atoms/ListItem';
 import Tile from '../atoms/Tile';
 import formatId from '../formatId';
 import * as colours from '../colours';
+import FormGroup from '../atoms/FormGroup';
+import { DebouncedInput } from '../atoms/Inputs';
 
 type Props = {
   size: number,
@@ -40,6 +42,7 @@ class TileEditor extends React.PureComponent<Props, State> {
     this.handleEditStart = this.handleEditStart.bind(this);
     this.handleEdit = this.handleEdit.bind(this);
     this.handleInspect = this.handleInspect.bind(this);
+    this.handleEditName = this.handleEditName.bind(this);
     this.getCellInfo = this.getCellInfo.bind(this);
     this.renderCell = this.renderCell.bind(this);
   }
@@ -64,6 +67,11 @@ class TileEditor extends React.PureComponent<Props, State> {
 
   handleInspect(x: number, y: number) {
     return;
+  }
+
+  handleEditName(newName: string) {
+    const newTile = Object.assign({}, this.props.tile, { name: newName });
+    this.props.handleChange(newTile);
   }
 
   getCellInfo(x: number, y: number) {
@@ -96,23 +104,34 @@ class TileEditor extends React.PureComponent<Props, State> {
               handleInspect={this.handleInspect}
               getCellInfo={this.getCellInfo}
             />
-            <div style={{ marginTop: '10px' }}>
-              {this.props.tile.frames.map((frame, idx) => (
-                <ListItem
-                  key={`${formatId(tile)} - ${idx}`}
-                  onClick={() => { this.setState({ selectedFrame: idx }); }}
-                  selected={this.state.selectedFrame === idx}
-                >
-                  <Tile
-                    tile={tile}
-                    scale={4}
-                    bgColour={this.props.bgColour}
-                    fgColour={this.props.fgColour}
-                    frame={idx}
-                  />
-                  <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
-                </ListItem>
-              ))}
+            <div style={{ marginTop: '20px' }}>
+              <FormGroup htmlFor="spudsy-thing__name" label="Name">
+                <DebouncedInput
+                  id="spudy-thing__name"
+                  type="text"
+                  value={tile.name}
+                  placeholder={tile.id.toString()}
+                  onValueChange={this.handleEditName}
+                />
+              </FormGroup>
+              <FormGroup label="Frames" style={{ marginTop: '10px' }}>
+                {this.props.tile.frames.map((frame, idx) => (
+                  <ListItem
+                    key={`${formatId(tile)} - ${idx}`}
+                    onClick={() => { this.setState({ selectedFrame: idx }); }}
+                    selected={this.state.selectedFrame === idx}
+                  >
+                    <Tile
+                      tile={tile}
+                      scale={4}
+                      bgColour={this.props.bgColour}
+                      fgColour={this.props.fgColour}
+                      frame={idx}
+                    />
+                    <div style={{ marginLeft: '10px' }}>{tile.id} - {tile.name}</div>
+                  </ListItem>
+                ))}
+              </FormGroup>
             </div>
           </React.Fragment>
           :
