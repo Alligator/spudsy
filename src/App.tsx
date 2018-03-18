@@ -115,6 +115,14 @@ class App extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     const node = document.createElement('div');
+    let serializedGame: string = '';
+
+    try {
+      serializedGame = serializeBitsy(this.state.game).join('\n');
+    } catch (e) {
+      serializedGame = `:( uh oh serialization also broke. raw data:\n${JSON.stringify(this.state.game, null, 2)}`;
+    }
+
     ReactDOM.render(
       (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -129,7 +137,7 @@ class App extends React.Component<Props, State> {
               color: colours.fg,
               border: `2px solid ${colours.fg2}`,
             }}
-            value={serializeBitsy(this.state.game).join('\n')}
+            value={serializedGame}
           />
           <div style={{ margin: '10px 0' }}>
             Error information:
@@ -577,7 +585,7 @@ class App extends React.Component<Props, State> {
             <Card title="Actions" width={256}>
               <div
                 style={{
-                  height: '288px',
+                  maxHeight: '288px',
                   display: 'flex',
                   flexDirection: 'column',
                   overflowY: 'auto',
