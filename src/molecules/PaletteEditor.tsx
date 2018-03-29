@@ -16,8 +16,7 @@ type Props = {
 type Colours = 'bg' | 'tile' | 'sprite';
 
 type State = {
-  selectedColour: Colours,
-  selectedPalette?: BitsyPalette,
+  selectedPaletteId?: number,
 };
 
 const SquareColourBlock = styled<{ colour: string }, 'div'>('div')`
@@ -30,29 +29,24 @@ class PaletteEditor extends React.PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = {
-      selectedColour: 'bg',
-      selectedPalette: props.palettes[0],
-    };
+    this.state = {};
 
     this.handleColourChange = this.handleColourChange.bind(this);
-    this.handleColourClick = this.handleColourClick.bind(this);
   }
 
-  handleColourChange(colour: RGBColor) {
+  handleColourChange(selectedColour: string, colour: RGBColor) {
+    const selectedPalette = this.props.palettes.filter(palette => palette.id === this.state.selectedPaletteId)[0];
+
     const newPalette = Object.assign(
       {},
-      this.state.selectedPalette,
-      { [this.state.selectedColour]: colour },
+      selectedPalette,
+      { [selectedColour]: `rgb(${colour.r}, ${colour.g}, ${colour.b})` },
     );
 
     this.props.handleChange(newPalette);
   }
 
-  handleColourClick(colour: Colours) {
-    this.setState({ selectedColour: colour });
-  }
-
+  // TODO: Why is this jumping back after you select a colour?
   render() {
     const sortedPalettes = this.props.palettes.slice().sort((a, b) => {
       const aName = formatId(a);
@@ -60,9 +54,11 @@ class PaletteEditor extends React.PureComponent<Props, State> {
       return aName.toLowerCase().localeCompare(bName.toLowerCase());
     });
 
+    const selectedPalette = this.props.palettes.filter(palette => palette.id === this.state.selectedPaletteId)[0];
+
     return (
       <div>
-        {this.state.selectedPalette &&
+        {selectedPalette &&
           <Tabs
             tabs={['Background', 'Tile', 'Sprite']}
             renderTab={(tabName) => {
@@ -73,12 +69,10 @@ class PaletteEditor extends React.PureComponent<Props, State> {
               };
               return (
                 <div style={{ marginBottom: '10px' }}>
-                  {this.state.selectedPalette &&
-                    <ColourPicker
-                      colour={this.state.selectedPalette[mapping[tabName]]}
-                      handleChange={this.handleColourChange}
-                    />
-                  }
+                  <ColourPicker
+                    colour={selectedPalette[mapping[tabName]]}
+                    handleChange={(colour) => this.handleColourChange(mapping[tabName], colour)}
+                  />
                 </div>
               );
             }}
@@ -88,9 +82,9 @@ class PaletteEditor extends React.PureComponent<Props, State> {
           {sortedPalettes.map((palette) => (
             <ListItem
               key={palette.id}
-              selected={this.state.selectedPalette ? palette.id === this.state.selectedPalette.id : false}
+              selected={selectedPalette ? palette.id === selectedPalette.id : false}
               style={{ justifyContent: 'space-between', paddingRight: '10px' }}
-              onClick={() => { this.setState({ selectedPalette: palette }); }}
+              onClick={() => { this.setState({ selectedPaletteId: palette.id }); }}
             >
               <div style={{ display: 'flex' }}>
                 <SquareColourBlock colour={palette.bg} />

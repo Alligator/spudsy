@@ -5,7 +5,7 @@ import * as colours from '../colours';
 type Props = {
   title: string,
   style?: React.CSSProperties,
-  onClick: () => void,
+  onClick?: () => void,
 };
 
 const StyledButton = styled('button')`
@@ -28,13 +28,15 @@ const StyledButton = styled('button')`
   }
 `;
 
-const ListemItemButton: React.StatelessComponent<Props> = (props) => {
+const ListItemButton: React.StatelessComponent<Props> = (props) => {
   return (
     <StyledButton
       type="button"
       onClick={(evt) => {
         evt.stopPropagation();
-        props.onClick();
+        if (props.onClick) {
+          props.onClick();
+        }
       }}
       title={props.title}
       style={props.style}
@@ -44,4 +46,4 @@ const ListemItemButton: React.StatelessComponent<Props> = (props) => {
   );
 };
 
-export default ListemItemButton;
+export default ListItemButton;

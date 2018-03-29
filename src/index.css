@@ -11,6 +11,7 @@ body {
   font-size: 10pt;
   background-color: #222222;
   color: #fbf5ef;
+  overflow-y: hidden;
 }
 
 a, a:visited {

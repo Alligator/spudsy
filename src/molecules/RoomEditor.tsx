@@ -327,7 +327,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
                   onChange={this.handleEditPalette}
                 >
                   {this.props.palettes.map(palette => (
-                    <option value={palette.id}>{formatId(palette)}</option>
+                    <option value={palette.id} key={palette.id}>{formatId(palette)}</option>
                   ))}
                 </Select>
               </FormGroup>

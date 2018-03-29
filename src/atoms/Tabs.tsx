@@ -19,7 +19,7 @@ const Tab = styled<{ active: boolean }, 'div'>('div')`
   cursor: pointer;
 
   &:hover {
-    font-weight: bold;
+    background-color: ${(props) => props.active ? colours.fg2 : colours.fg3};
   }
 `;
 
@@ -48,6 +48,7 @@ class Tabs extends React.PureComponent<Props, State> {
               active={this.state.currentTab === tab}
               className="spudsy-tab"
               onClick={() => { this.setState({ currentTab: tab }); }}
+              key={tab}
             >
               {tab}
             </Tab>

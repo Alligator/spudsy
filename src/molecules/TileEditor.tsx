@@ -60,6 +60,10 @@ class TileEditor extends React.PureComponent<Props, State> {
   }
 
   handleEdit(x: number, y: number) {
+    if (this.props.tile.frames[this.state.selectedFrame][x + y * this.props.tileCount] === this.state.changingCellsTo) {
+      // cell is not changing
+      return;
+    }
     const newFrames = cloneDeep(this.props.tile.frames);
     newFrames[this.state.selectedFrame][x + y * this.props.tileCount] = this.state.changingCellsTo;
     this.props.handleChange(Object.assign({}, this.props.tile, { frames: newFrames }));

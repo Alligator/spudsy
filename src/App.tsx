@@ -11,6 +11,7 @@ import parseBitsy, {
   BitsyDrawable,
   BitsySprite,
   BitsyItem,
+  BitsyDialog,
 } from './bitsy-parser';
 import Card from './atoms/Card';
 import PaletteEditor from './molecules/PaletteEditor';
@@ -21,10 +22,11 @@ import swal from 'sweetalert';
 import formatId from './formatId';
 import ThingsEditor from './molecules/ThingsEditor';
 import * as colours from './colours';
-import { Button } from './atoms/Inputs';
+import { Button, TextArea } from './atoms/Inputs';
 import ListItem from './atoms/ListItem';
-import ListemItemButton from './atoms/ListItemButton';
+import ListItemButton from './atoms/ListItemButton';
 import * as ReactDOM from 'react-dom';
+import DialogEditor from './molecules/DialogEditor';
 
 const VerticalContainer = styled('div') `
   display: flex;
@@ -60,6 +62,7 @@ TODO:
 */
 
 class App extends React.Component<Props, State> {
+  trauma: number = 0;
   constructor(props: Props) {
     super(props);
 
@@ -72,6 +75,7 @@ class App extends React.Component<Props, State> {
         sprites: [],
         items: [],
         startingItems: [],
+        dialogs: [],
         variables: {},
       },
       previousGames: [],
@@ -97,6 +101,7 @@ class App extends React.Component<Props, State> {
     this.handleCloneRoom = this.handleCloneRoom.bind(this);
 
     this.handleEditSprite = this.handleEditSprite.bind(this);
+    this.handleEditPalette = this.handleEditPalette.bind(this);
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleKeyUp = this.handleKeyUp.bind(this);
@@ -111,6 +116,36 @@ class App extends React.Component<Props, State> {
 
     document.addEventListener('keydown', this.handleKeyDown);
     document.addEventListener('keyup', this.handleKeyUp);
+
+    // this is so stupid i have to find a place for it
+    /*
+    let pt = new Date().getTime();
+    const frame = () => {
+      let ct = new Date().getTime();
+      let dt = ct - pt;
+      const simplex = new SimplexNoise();
+      const seed = Math.random() * 10;
+
+      this.trauma -= 0.05;
+      this.trauma = Math.max(Math.min(this.trauma, 1), 0);
+
+      if (this.trauma > 0) {
+        const x = (simplex.noise2D(seed, dt) * 2 - 1) * Math.pow(this.trauma, 2) * 20;
+        const y = (simplex.noise2D(seed + 1, dt) * 2 - 1) * Math.pow(this.trauma, 2) * 20;
+        const r = simplex.noise2D(seed + 2, dt) * Math.pow(this.trauma, 2) / 12;
+        document.body.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) rotate(${r.toFixed(6)}rad)`;
+      } else {
+        document.body.style.transform = 'translate(0, 0) rotate(0rad)';
+      }
+
+      pt = new Date().getTime();
+    };
+    setInterval(frame, 70);
+    */
+  }
+
+  componentDidUpdate() {
+    this.trauma += 0.25;
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
@@ -386,6 +421,17 @@ class App extends React.Component<Props, State> {
     this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Moved sprite');
   }
 
+  handleEditPalette(newPalette: BitsyPalette) {
+    const newPalettes = this.state.game.palettes.map((palette) => {
+      if (palette.id === newPalette.id) {
+        return newPalette;
+      }
+      return palette;
+    });
+
+    this.updateGame(Object.assign({}, this.state.game, { palettes: newPalettes }), 'Edited palette');
+  }
+
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
     const data = evt.target.value;
     localStorage.setItem('bitsyGame', data);
@@ -472,6 +518,12 @@ class App extends React.Component<Props, State> {
     } else if (typeof this.state.selectedItemId === 'number') {
       selectedThing = this.findThing(game.items, this.state.selectedItemId) as BitsyDrawable;
       title = 'Item';
+    }
+
+    let selectedDialog: BitsyDialog | null = null;
+    if (selectedThing && selectedThing.dialogId) {
+      const dialogId: string = selectedThing.dialogId;
+      selectedDialog = this.state.game.dialogs.filter(dialog => dialog.id === dialogId)[0];
     }
 
     const selectedRoom = this.state.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
@@ -572,57 +624,27 @@ class App extends React.Component<Props, State> {
           </VerticalContainer>
 
           <VerticalContainer>
+            <Card title="Dialog" width={256}>
+              {selectedDialog &&
+              <DialogEditor
+                dialog={selectedDialog.content}
+              />}
+            </Card>
+
             <Card title="Palette" width={256}>
               <PaletteEditor
                 palettes={game.palettes}
-                handleChange={() => null}
+                handleChange={this.handleEditPalette}
               />
-            </Card>
-
-            <Card title="Actions" width={256}>
-              <div
-                style={{
-                  maxHeight: '288px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  overflowY: 'auto',
-                  marginBottom: '10px',
-                }}
-              >
-                {this.state.previousGames.slice().reverse().map((action, idx) => (
-                  <ListItem
-                    selected={idx === 0}
-                    style={{
-                      padding: '0 10px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                      <div style={{ fontSize: '8pt', color: colours.fg1 }}>
-                        {action.timestamp.toLocaleTimeString()}
-                      </div>
-                      {action.name}
-                    </div>
-                    <ListemItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
-                      <i className="fa fa-undo fa-lg" />
-                    </ListemItemButton>
-                  </ListItem>
-                ))}
-              </div>
-              <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
             </Card>
           </VerticalContainer>
 
           <VerticalContainer>
             <Card title="Game Data" width={256}>
-              <textarea
+              <TextArea
                 style={{
-                  width: '100%',
+                  width: '256px',
                   height: '256px',
-                  backgroundColor: colours.bg2,
-                  color: colours.fg,
-                  border: `2px solid ${colours.fg2}`,
                 }}
                 value={this.state.rawGameData}
                 onChange={this.handleEditGameData}
@@ -641,6 +663,41 @@ class App extends React.Component<Props, State> {
                 serialize
               </Button>
             </Card>
+
+            <Card title="Actions" width={256}>
+              <div
+                style={{
+                  maxHeight: '288px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  overflowY: 'auto',
+                  marginBottom: '10px',
+                }}
+              >
+                {this.state.previousGames.slice().reverse().map((action, idx) => (
+                  <ListItem
+                    selected={idx === 0}
+                    key={action.timestamp.toString()}
+                    style={{
+                      padding: '0 10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                      <div style={{ fontSize: '8pt', color: colours.fg1 }}>
+                        {action.timestamp.toLocaleTimeString()}
+                      </div>
+                      {action.name}
+                    </div>
+                    <ListItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
+                      <i className="fa fa-undo fa-lg" />
+                    </ListItemButton>
+                  </ListItem>
+                ))}
+              </div>
+              <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
+            </Card>
           </VerticalContainer>
         </div>
         <div
@@ -656,8 +713,7 @@ class App extends React.Component<Props, State> {
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <img src="spud.png" />
             <a href="https://github.com/Alligator/spudsy" target="_blank">spudsy</a>
-            {InfoSeparator}
-            <div>by <a href="https://alligatr.co.uk" target="_blank">alligator</a></div>
+            <div>&nbsp;by <a href="https://alligatr.co.uk" target="_blank">alligator</a></div>
           </div>
         </div>
       </div>

@@ -18,7 +18,7 @@ const ListItem = styled<Props, 'div'>('div')`
   }
 
   &:hover {
-    font-weight: bold;
+    background-color: ${colours.fg2};
   }
 `;
 

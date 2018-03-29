@@ -22,6 +22,7 @@ const Input = styled('input')`
 `;
 
 const Select = Input.withComponent('select');
+
 const Button = styled('button')`
   display: flex;
   align-items: center;
@@ -36,13 +37,20 @@ const Button = styled('button')`
   cursor: pointer;
 
   &:hover {
-    font-weight: bold;
+    background-color: ${colours.fg3};
   }
+`;
+
+const TextArea = styled('textarea')`
+  box-sizing: border-box;
+  background-color: ${colours.bg2};
+  color: ${colours.fg};
+  border: 2px solid ${colours.fg2};
 `;
 
 type DebouncedInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   value: string,
-  onValueChange?: (value: string) => void,
+  onValueChange?: (value: string) => void, // TODO: Getting warnings about this event handler for some reason.
 };
 
 type DebouncedInputState = {
@@ -94,4 +102,5 @@ export {
   DebouncedInput,
   Select,
   Button,
+  TextArea,
 };

@@ -15,6 +15,7 @@ export interface BitsyGame {
   items: Array<BitsyItem>;
   startingItems: Array<BitsyVariables>;
   variables: BitsyVariables;
+  dialogs: Array<BitsyDialog>;
 }
 
 export interface BitsyVariables {
@@ -24,6 +25,7 @@ export interface BitsyVariables {
 export interface BitsyThing {
   id: number;
   name: string;
+  dialogId?: string;
 }
 
 export interface BitsyPalette extends BitsyThing {
@@ -69,7 +71,7 @@ export interface BitsyItem extends BitsyThing, BitsyDrawable {
 
 export interface BitsyDialog {
   id: string;
-  content: string;
+  content: Array<string>;
 }
 
 export interface BitsyPosition {
@@ -342,6 +344,36 @@ function parseVar(game: BitsyGame, input: Array<string>): Array<string> {
   return lines;
 }
 
+function parseDialog(game: BitsyGame, input: Array<string>): Array<string> {
+  const dialog: BitsyDialog = {
+    id: getArg(input[0]),
+    content: [],
+  };
+  let lines = input.slice(1);
+
+  if (lines[0] === '"""') {
+    // multi-line
+
+    // consume the opening """
+    lines = lines.slice(1);
+
+    while (lines[0] !== '"""') {
+      dialog.content.push(lines[0]);
+      lines = lines.slice(1);
+    }
+
+    // consume the closing """
+    lines = lines.slice(1);
+  } else {
+    // single line
+    dialog.content = [lines[0]];
+    lines = lines.slice(1);
+  }
+
+  game.dialogs.push(dialog);
+  return lines;
+}
+
 function parseBitsy(input: string): BitsyGame {
   let game: BitsyGame = {
     title: '',
@@ -352,6 +384,7 @@ function parseBitsy(input: string): BitsyGame {
     items: [],
     startingItems: [],
     variables: {},
+    dialogs: [],
   };
   let lines = input.split('\n');
 
@@ -390,6 +423,10 @@ function parseBitsy(input: string): BitsyGame {
       }
       case 'VAR': {
         lines = parseVar(game, lines);
+        break;
+      }
+      case 'DLG': {
+        lines = parseDialog(game, lines);
         break;
       }
       default: {

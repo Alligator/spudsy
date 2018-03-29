@@ -126,6 +126,10 @@ class ImageEditor extends React.Component<Props, State> {
     return this.getCellCoordsFromPixel(x, y);
   }
 
+  suppressSelectStart(e: Event) {
+    e.preventDefault();
+  }
+
   handleMouseDown(evt: React.MouseEvent<HTMLDivElement>) {
     const coords = this.getCellCoordsFromMouseEvt(evt);
 
@@ -133,6 +137,8 @@ class ImageEditor extends React.Component<Props, State> {
       this.props.handleInspect(coords.x, coords.y);
       return;
     }
+
+    window.addEventListener('selectstart', this.suppressSelectStart);
 
     this.props.handleEditStart(coords.x, coords.y);
     this.setState({
@@ -144,6 +150,8 @@ class ImageEditor extends React.Component<Props, State> {
 
   handleMouseUp(evt: React.MouseEvent<HTMLDivElement>) {
     const coords = this.getCellCoordsFromMouseEvt(evt);
+
+    window.removeEventListener('selectstart', this.suppressSelectStart);
 
     this.props.handleEditEnd(coords.x, coords.y);
     this.setState({
