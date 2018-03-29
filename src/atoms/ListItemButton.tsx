@@ -26,6 +26,10 @@ const StyledButton = styled('button')`
   &:hover {
     transform: scale(1.2);
   }
+
+  &:focus {
+    outline: none;
+  }
 `;
 
 const ListItemButton: React.StatelessComponent<Props> = (props) => {
