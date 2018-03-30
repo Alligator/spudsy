@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { connect, Dispatch } from 'react-redux';
 import styled from 'react-emotion';
 import { cloneDeep } from 'lodash';
 import parseBitsy, {
@@ -27,6 +28,8 @@ import ListItem from './atoms/ListItem';
 import ListItemButton from './atoms/ListItemButton';
 import * as ReactDOM from 'react-dom';
 import DialogEditor from './molecules/DialogEditor';
+import { StoreState, createRoom, setGame, cloneRoom } from './state';
+import { bindActionCreators } from 'redux';
 
 const VerticalContainer = styled('div') `
   display: flex;
@@ -42,10 +45,15 @@ type UndoAction = {
   timestamp: Date,
 };
 
-type Props = {};
-type State = {
+type Props = {
   game: BitsyGame,
-  previousGames: Array<UndoAction>,
+  setGame: typeof setGame,
+  createRoom: typeof createRoom,
+  cloneRoom: typeof cloneRoom,
+};
+type State = {
+  // game: BitsyGame,
+  // previousGames: Array<UndoAction>,
   selectedRoomId?: number,
   selectedTileId?: number,
   selectedSpriteId?: number,
@@ -67,18 +75,6 @@ class App extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      game: {
-        title: '',
-        palettes: [],
-        rooms: [],
-        tiles: [],
-        sprites: [],
-        items: [],
-        startingItems: [],
-        dialogs: [],
-        variables: {},
-      },
-      previousGames: [],
       rawGameData: '',
       ctrlHeld: false,
       zHeld: false,
@@ -153,9 +149,9 @@ class App extends React.Component<Props, State> {
     let serializedGame: string = '';
 
     try {
-      serializedGame = serializeBitsy(this.state.game).join('\n');
+      serializedGame = serializeBitsy(this.props.game).join('\n');
     } catch (e) {
-      serializedGame = `:( uh oh serialization also broke. raw data:\n${JSON.stringify(this.state.game, null, 2)}`;
+      serializedGame = `:( uh oh serialization also broke. raw data:\n${JSON.stringify(this.props.game, null, 2)}`;
     }
 
     ReactDOM.render(
@@ -199,6 +195,7 @@ class App extends React.Component<Props, State> {
   }
 
   handleKeyDown(evt: KeyboardEvent) {
+    /*
     switch (evt.which) {
       // ctrl
       case 17: {
@@ -223,9 +220,11 @@ class App extends React.Component<Props, State> {
       default:
         break;
     }
+    */
   }
 
   handleKeyUp(evt: KeyboardEvent) {
+    /*
     switch (evt.which) {
       // ctrl
       case 17: {
@@ -240,9 +239,11 @@ class App extends React.Component<Props, State> {
       default:
         break;
     }
+    */
   }
 
   handleUndo(index: number) {
+    /*
     // the index we get here is reversed, since the list is drawn in reverse order
     this.setState((prevState: State) => {
       const newPrevGames = prevState.previousGames.slice(0, prevState.previousGames.length - index);
@@ -255,18 +256,19 @@ class App extends React.Component<Props, State> {
       }
       return prevState;
     });
+    */
   }
 
   handleTileChange(newThing: BitsyDrawable) {
     if (typeof this.state.selectedTileId === 'number') {
-      const newThings = this.state.game.tiles.map((tile) => tile.id === newThing.id ? newThing : tile);
-      this.updateGame(Object.assign({}, this.state.game, { tiles: newThings }), 'Edited tile');
+      // const newThings = this.state.game.tiles.map((tile) => tile.id === newThing.id ? newThing : tile);
+      // this.updateGame(Object.assign({}, this.state.game, { tiles: newThings }), 'Edited tile');
     } else if (typeof this.state.selectedSpriteId === 'number') {
-      const newSprites = this.state.game.sprites.map((sprite) => sprite.id === newThing.id ? newThing : sprite);
-      this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Edited sprite');
+      // const newSprites = this.state.game.sprites.map((sprite) => sprite.id === newThing.id ? newThing : sprite);
+      // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Edited sprite');
     } else if (typeof this.state.selectedItemId === 'number') {
-      const newItems = this.state.game.items.map((item) => item.id === newThing.id ? newThing : item);
-      this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Edited item');
+      // const newItems = this.state.game.items.map((item) => item.id === newThing.id ? newThing : item);
+      // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Edited item');
     }
   }
 
@@ -275,8 +277,8 @@ class App extends React.Component<Props, State> {
     this.showDeletePrompt(`Delete tile "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
-          const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
-          this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Deleted tile');
+          // const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
+          // this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Deleted tile');
         }
       });
   }
@@ -285,8 +287,8 @@ class App extends React.Component<Props, State> {
     this.showDeletePrompt(`Delete sprite "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
-          const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
-          this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Deleted sprite');
+          // const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
+          // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Deleted sprite');
         }
       });
   }
@@ -296,140 +298,126 @@ class App extends React.Component<Props, State> {
     this.showDeletePrompt(`Delete item "${formatId(thingToDelete)}"?`)
       .then((willDelete) => {
         if (willDelete) {
-          const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
-          this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Deleted item');
+          // const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
+          // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Deleted item');
         }
       });
   }
   handleEditRoom(newRoom: BitsyRoom) {
-    const newRooms = this.state.game.rooms.map((room) => {
-      if (room.id === this.state.selectedRoomId) {
-        return newRoom;
-      }
-      return room;
-    });
+    // const newRooms = this.state.game.rooms.map((room) => {
+    //   if (room.id === this.state.selectedRoomId) {
+    //     return newRoom;
+    //   }
+    //   return room;
+    // });
 
-    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Edited room');
+    // this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Edited room');
   }
 
   handleDeleteRoom(roomToDelete: BitsyRoom) {
-    this.showDeletePrompt(`Delete room "${formatId(roomToDelete)}"?`)
-      .then((willDelete) => {
-        if (willDelete) {
-          const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
-          this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Deleted room');
-        }
-      });
-    return;
+    // this.showDeletePrompt(`Delete room "${formatId(roomToDelete)}"?`)
+    //   .then((willDelete) => {
+    //     if (willDelete) {
+    //       const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
+    //       this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Deleted room');
+    //     }
+    //   });
+    // return;
   }
 
   handleAddTile() {
-    const maxId = Math.max.apply(Math, this.state.game.tiles.map(thing => thing.id));
-    const newTile: BitsyTile = {
-      id: maxId + 1,
-      name: '',
-      frames: [[]],
-      isTile: true,
-      wall: false,
-    };
-    const newTiles = [...this.state.game.tiles, newTile];
+    // const maxId = Math.max.apply(Math, this.state.game.tiles.map(thing => thing.id));
+    // const newTile: BitsyTile = {
+    //   id: maxId + 1,
+    //   name: '',
+    //   frames: [[]],
+    //   isTile: true,
+    //   wall: false,
+    // };
+    // const newTiles = [...this.state.game.tiles, newTile];
 
-    this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Added tile');
-    this.setState((prevState: State) => ({
-      selectedTileId: newTile.id,
-      selectedSpriteId: undefined,
-      selectedItemId: undefined,
-    }));
+    // this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Added tile');
+    // this.setState((prevState: State) => ({
+    //   selectedTileId: newTile.id,
+    //   selectedSpriteId: undefined,
+    //   selectedItemId: undefined,
+    // }));
   }
 
   handleAddSprite() {
-    const maxId = Math.max.apply(Math, this.state.game.sprites.map(thing => thing.id));
-    const newSprite: BitsySprite = {
-      id: maxId + 1,
-      name: '',
-      isPlayer: false,
-      frames: [[]]
-    };
-    const newSprites = [...this.state.game.sprites, newSprite];
+    // const maxId = Math.max.apply(Math, this.state.game.sprites.map(thing => thing.id));
+    // const newSprite: BitsySprite = {
+    //   id: maxId + 1,
+    //   name: '',
+    //   isPlayer: false,
+    //   frames: [[]]
+    // };
+    // const newSprites = [...this.state.game.sprites, newSprite];
 
-    this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Added tile');
-    this.setState((prevState: State) => ({
-      selectedTileId: undefined,
-      selectedSpriteId: newSprite.id,
-      selectedItemId: undefined,
-    }));
+    // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Added sprite');
+    // this.setState((prevState: State) => ({
+    //   selectedTileId: undefined,
+    //   selectedSpriteId: newSprite.id,
+    //   selectedItemId: undefined,
+    // }));
   }
 
   handleAddItem() {
-    const maxId = Math.max.apply(Math, this.state.game.items.map(thing => thing.id));
-    const newItem: BitsyItem = {
-      id: maxId + 1,
-      name: '',
-      frames: [[]],
-    };
-    const newItems = [...this.state.game.items, newItem];
+    // const maxId = Math.max.apply(Math, this.state.game.items.map(thing => thing.id));
+    // const newItem: BitsyItem = {
+    //   id: maxId + 1,
+    //   name: '',
+    //   frames: [[]],
+    // };
+    // const newItems = [...this.state.game.items, newItem];
 
-    this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Added tile');
-    this.setState((prevState: State) => ({
-      selectedTileId: undefined,
-      selectedSpriteId: undefined,
-      selectedItemId: newItem.id,
-    }));
+    // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Added item');
+    // this.setState((prevState: State) => ({
+    //   selectedTileId: undefined,
+    //   selectedSpriteId: undefined,
+    //   selectedItemId: newItem.id,
+    // }));
 
   }
 
   handleAddRoom() {
-    const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
-    const newRoom: BitsyRoom = {
-      id: maxId + 1,
-      name: '',
-      tiles: [],
-      items: [],
-      exits: [],
-      endings: [],
-      paletteId: 0,
-    };
-
-    const newRooms = this.state.game.rooms.slice();
-    newRooms.push(newRoom);
-
-    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Added room');
-    this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
+    this.props.createRoom();
   }
 
   handleCloneRoom(roomToClone: BitsyRoom) {
-    const newRoom = Object.assign({}, roomToClone);
+    this.props.cloneRoom(roomToClone.id);
+    // const newRoom = Object.assign({}, roomToClone);
 
-    const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
-    newRoom.id = maxId + 1;
+    // const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
+    // newRoom.id = maxId + 1;
 
-    const newRooms = this.state.game.rooms.slice();
-    newRooms.push(newRoom);
+    // const newRooms = this.state.game.rooms.slice();
+    // newRooms.push(newRoom);
 
-    this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Cloned room');
-    this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
+    // this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Cloned room');
+    // this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
   }
 
   handleEditSprite(newSprite: BitsySprite) {
-    const newSprites = this.state.game.sprites.map((sprite) => {
-      if (sprite.id === newSprite.id) {
-        return newSprite;
-      }
-      return sprite;
-    });
+    // const newSprites = this.state.game.sprites.map((sprite) => {
+    //   if (sprite.id === newSprite.id) {
+    //     return newSprite;
+    //   }
+    //   return sprite;
+    // });
 
-    this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Moved sprite');
+    // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Moved sprite');
   }
 
   handleEditPalette(newPalette: BitsyPalette) {
-    const newPalettes = this.state.game.palettes.map((palette) => {
-      if (palette.id === newPalette.id) {
-        return newPalette;
-      }
-      return palette;
-    });
+    // const newPalettes = this.state.game.palettes.map((palette) => {
+    //   if (palette.id === newPalette.id) {
+    //     return newPalette;
+    //   }
+    //   return palette;
+    // });
 
-    this.updateGame(Object.assign({}, this.state.game, { palettes: newPalettes }), 'Edited palette');
+    // this.updateGame(Object.assign({}, this.state.game, { palettes: newPalettes }), 'Edited palette');
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -455,35 +443,34 @@ class App extends React.Component<Props, State> {
     const parsedGame = parseBitsy(rawData);
     console.log(parsedGame);
 
-    this.setState({
-      game: parsedGame,
-      rawGameData: rawData,
-    });
+    this.props.setGame(parsedGame);
   }
 
   updateGame(newGame: BitsyGame, action: string) {
-    this.setState((prevState: State) => {
-      let newPrevGames = prevState.previousGames.slice();
+    // const compressed = pako.deflate(JSON.stringify(this.state.game));
+    // this.setState((prevState: State) => {
+    //   let newPrevGames = prevState.previousGames.slice();
 
-      if (prevState.previousGames.length >= MAX_UNDO_HISTORY) {
-        newPrevGames = newPrevGames.splice(1);
-      }
+    //   if (prevState.previousGames.length >= MAX_UNDO_HISTORY) {
+    //     newPrevGames = newPrevGames.splice(1);
+    //   }
 
-      newPrevGames.push({
-        game: cloneDeep(prevState.game),
-        name: action,
-        timestamp: new Date(),
-      });
+    //   newPrevGames.push({
+    //     game: cloneDeep(prevState.game),
+    //     name: action,
+    //     timestamp: new Date(),
+    //   });
 
-      return {
-        game: newGame,
-        previousGames: newPrevGames,
-      };
-    });
+    //   return {
+    //     game: newGame,
+    //     previousGames: newPrevGames,
+    //   };
+    // });
   }
 
   getCurrentPalette(): BitsyPalette | undefined {
-    const { game, selectedRoomId } = this.state;
+    const { game } = this.props;
+    const { selectedRoomId } = this.state;
     const selectedRoom = typeof selectedRoomId === 'number' ? this.findThing(game.rooms, selectedRoomId) : undefined;
 
     if (selectedRoom) {
@@ -503,7 +490,7 @@ class App extends React.Component<Props, State> {
   }
 
   render() {
-    const { game } = this.state;
+    const { game } = this.props;
 
     let selectedThing: BitsyDrawable | null = null;
     let title = 'Thing';
@@ -523,10 +510,10 @@ class App extends React.Component<Props, State> {
     let selectedDialog: BitsyDialog | null = null;
     if (selectedThing && selectedThing.dialogId) {
       const dialogId: string = selectedThing.dialogId;
-      selectedDialog = this.state.game.dialogs.filter(dialog => dialog.id === dialogId)[0];
+      selectedDialog = this.props.game.dialogs.filter(dialog => dialog.id === dialogId)[0];
     }
 
-    const selectedRoom = this.state.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
+    const selectedRoom = this.props.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
 
     const InfoSeparator = <div style={{ margin: '0 10px' }}>|</div>;
 
@@ -626,9 +613,9 @@ class App extends React.Component<Props, State> {
           <VerticalContainer>
             <Card title="Dialog" width={256}>
               {selectedDialog &&
-              <DialogEditor
-                dialog={selectedDialog.content}
-              />}
+                <DialogEditor
+                  dialog={selectedDialog.content}
+                />}
             </Card>
 
             <Card title="Palette" width={256}>
@@ -652,8 +639,8 @@ class App extends React.Component<Props, State> {
               <Button
                 type="button"
                 onClick={() => {
-                  console.groupCollapsed(this.state.game.title);
-                  const serializedGame = serializeBitsy(this.state.game).join('\n');
+                  console.groupCollapsed(this.props.game.title);
+                  const serializedGame = serializeBitsy(this.props.game).join('\n');
                   // tslint:disable-next-line:no-any
                   (window as any).serializedGame = serializedGame;
                   console.log(serializedGame);
@@ -674,7 +661,7 @@ class App extends React.Component<Props, State> {
                   marginBottom: '10px',
                 }}
               >
-                {this.state.previousGames.slice().reverse().map((action, idx) => (
+                {/* {this.state.previousGames.slice().reverse().map((action, idx) => (
                   <ListItem
                     selected={idx === 0}
                     key={action.timestamp.toString()}
@@ -694,7 +681,7 @@ class App extends React.Component<Props, State> {
                       <i className="fa fa-undo fa-lg" />
                     </ListItemButton>
                   </ListItem>
-                ))}
+                ))} */}
               </div>
               <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
             </Card>
@@ -721,4 +708,19 @@ class App extends React.Component<Props, State> {
   }
 }
 
-export default App;
+const mapStateToProps = (state: StoreState): Partial<Props> => ({
+  game: state.game,
+});
+
+const mapDispatchToProps = (dispatch: Dispatch<StoreState>) => bindActionCreators(
+  {
+    setGame,
+    createRoom,
+    cloneRoom,
+  },
+  dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(App);
