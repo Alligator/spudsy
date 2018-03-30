@@ -28,7 +28,27 @@ import ListItem from './atoms/ListItem';
 import ListItemButton from './atoms/ListItemButton';
 import * as ReactDOM from 'react-dom';
 import DialogEditor from './molecules/DialogEditor';
-import { StoreState, createRoom, setGame, cloneRoom } from './state';
+import {
+  StoreState,
+  createRoom,
+  setGame,
+  cloneRoom,
+  changeRoom,
+  deleteRoom,
+  createTile,
+  changeTile,
+  deleteTile,
+  createSprite,
+  changeSprite,
+  deleteSprite,
+  createItem,
+  changeItem,
+  deleteItem,
+  changePalette,
+  undo,
+  UndoAction,
+  Undoable,
+} from './state';
 import { bindActionCreators } from 'redux';
 
 const VerticalContainer = styled('div') `
@@ -39,18 +59,33 @@ const VerticalContainer = styled('div') `
 
 const MAX_UNDO_HISTORY = 10;
 
-type UndoAction = {
-  game: BitsyGame,
-  name: string,
-  timestamp: Date,
-};
-
 type Props = {
   game: BitsyGame,
+  undoStack: Array<UndoAction>,
+
+  undo: typeof undo,
   setGame: typeof setGame,
+
+  createTile: typeof createTile,
+  changeTile: typeof changeTile,
+  deleteTile: typeof deleteTile,
+
+  createSprite: typeof createSprite,
+  changeSprite: typeof changeSprite,
+  deleteSprite: typeof deleteSprite,
+
+  createItem: typeof createItem,
+  changeItem: typeof changeItem,
+  deleteItem: typeof deleteItem,
+
   createRoom: typeof createRoom,
+  changeRoom: typeof changeRoom,
+  deleteRoom: typeof deleteRoom,
   cloneRoom: typeof cloneRoom,
+
+  changePalette: typeof changePalette,
 };
+
 type State = {
   // game: BitsyGame,
   // previousGames: Array<UndoAction>,
@@ -261,123 +296,44 @@ class App extends React.Component<Props, State> {
 
   handleTileChange(newThing: BitsyDrawable) {
     if (typeof this.state.selectedTileId === 'number') {
-      // const newThings = this.state.game.tiles.map((tile) => tile.id === newThing.id ? newThing : tile);
-      // this.updateGame(Object.assign({}, this.state.game, { tiles: newThings }), 'Edited tile');
+      this.props.changeTile(newThing as BitsyTile);
     } else if (typeof this.state.selectedSpriteId === 'number') {
-      // const newSprites = this.state.game.sprites.map((sprite) => sprite.id === newThing.id ? newThing : sprite);
-      // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Edited sprite');
+      this.props.changeSprite(newThing as BitsySprite);
     } else if (typeof this.state.selectedItemId === 'number') {
-      // const newItems = this.state.game.items.map((item) => item.id === newThing.id ? newThing : item);
-      // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Edited item');
+      this.props.changeItem(newThing as BitsyItem);
     }
   }
 
   handleDeleteTile(thingToDelete: BitsyDrawable) {
-    // TODO: tidy up any rooms that have this tile
-    this.showDeletePrompt(`Delete tile "${formatId(thingToDelete)}"?`)
-      .then((willDelete) => {
-        if (willDelete) {
-          // const newTiles = this.state.game.tiles.filter(tile => tile.id !== thingToDelete.id);
-          // this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Deleted tile');
-        }
-      });
+    this.props.deleteTile(thingToDelete.id);
   }
 
   handleDeleteSprite(thingToDelete: BitsyDrawable) {
-    this.showDeletePrompt(`Delete sprite "${formatId(thingToDelete)}"?`)
-      .then((willDelete) => {
-        if (willDelete) {
-          // const newSprites = this.state.game.sprites.filter(sprite => sprite.id !== thingToDelete.id);
-          // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Deleted sprite');
-        }
-      });
+    this.props.deleteSprite(thingToDelete.id);
   }
 
   handleDeleteItem(thingToDelete: BitsyDrawable) {
-    // TODO: tidy up any rooms that have this item
-    this.showDeletePrompt(`Delete item "${formatId(thingToDelete)}"?`)
-      .then((willDelete) => {
-        if (willDelete) {
-          // const newItems = this.state.game.items.filter(item => item.id !== thingToDelete.id);
-          // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Deleted item');
-        }
-      });
+    this.props.deleteItem(thingToDelete.id);
   }
-  handleEditRoom(newRoom: BitsyRoom) {
-    // const newRooms = this.state.game.rooms.map((room) => {
-    //   if (room.id === this.state.selectedRoomId) {
-    //     return newRoom;
-    //   }
-    //   return room;
-    // });
 
-    // this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Edited room');
+  handleEditRoom(newRoom: BitsyRoom) {
+    this.props.changeRoom(newRoom);
   }
 
   handleDeleteRoom(roomToDelete: BitsyRoom) {
-    // this.showDeletePrompt(`Delete room "${formatId(roomToDelete)}"?`)
-    //   .then((willDelete) => {
-    //     if (willDelete) {
-    //       const newRooms = this.state.game.rooms.filter(room => room.id !== roomToDelete.id);
-    //       this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Deleted room');
-    //     }
-    //   });
-    // return;
+    this.props.deleteRoom(roomToDelete.id);
   }
 
   handleAddTile() {
-    // const maxId = Math.max.apply(Math, this.state.game.tiles.map(thing => thing.id));
-    // const newTile: BitsyTile = {
-    //   id: maxId + 1,
-    //   name: '',
-    //   frames: [[]],
-    //   isTile: true,
-    //   wall: false,
-    // };
-    // const newTiles = [...this.state.game.tiles, newTile];
-
-    // this.updateGame(Object.assign({}, this.state.game, { tiles: newTiles }), 'Added tile');
-    // this.setState((prevState: State) => ({
-    //   selectedTileId: newTile.id,
-    //   selectedSpriteId: undefined,
-    //   selectedItemId: undefined,
-    // }));
+    this.props.createTile();
   }
 
   handleAddSprite() {
-    // const maxId = Math.max.apply(Math, this.state.game.sprites.map(thing => thing.id));
-    // const newSprite: BitsySprite = {
-    //   id: maxId + 1,
-    //   name: '',
-    //   isPlayer: false,
-    //   frames: [[]]
-    // };
-    // const newSprites = [...this.state.game.sprites, newSprite];
-
-    // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Added sprite');
-    // this.setState((prevState: State) => ({
-    //   selectedTileId: undefined,
-    //   selectedSpriteId: newSprite.id,
-    //   selectedItemId: undefined,
-    // }));
+    this.props.createSprite();
   }
 
   handleAddItem() {
-    // const maxId = Math.max.apply(Math, this.state.game.items.map(thing => thing.id));
-    // const newItem: BitsyItem = {
-    //   id: maxId + 1,
-    //   name: '',
-    //   frames: [[]],
-    // };
-    // const newItems = [...this.state.game.items, newItem];
-
-    // this.updateGame(Object.assign({}, this.state.game, { items: newItems }), 'Added item');
-    // this.setState((prevState: State) => ({
-    //   selectedTileId: undefined,
-    //   selectedSpriteId: undefined,
-    //   selectedItemId: newItem.id,
-    // }));
-
+    this.props.createItem();
   }
 
   handleAddRoom() {
@@ -386,38 +342,14 @@ class App extends React.Component<Props, State> {
 
   handleCloneRoom(roomToClone: BitsyRoom) {
     this.props.cloneRoom(roomToClone.id);
-    // const newRoom = Object.assign({}, roomToClone);
-
-    // const maxId = Math.max.apply(Math, this.state.game.rooms.map(room => room.id));
-    // newRoom.id = maxId + 1;
-
-    // const newRooms = this.state.game.rooms.slice();
-    // newRooms.push(newRoom);
-
-    // this.updateGame(Object.assign({}, this.state.game, { rooms: newRooms }), 'Cloned room');
-    // this.setState((prevState: State) => ({ selectedRoomId: newRoom.id }));
   }
 
   handleEditSprite(newSprite: BitsySprite) {
-    // const newSprites = this.state.game.sprites.map((sprite) => {
-    //   if (sprite.id === newSprite.id) {
-    //     return newSprite;
-    //   }
-    //   return sprite;
-    // });
-
-    // this.updateGame(Object.assign({}, this.state.game, { sprites: newSprites }), 'Moved sprite');
+    this.props.changeSprite(newSprite);
   }
 
   handleEditPalette(newPalette: BitsyPalette) {
-    // const newPalettes = this.state.game.palettes.map((palette) => {
-    //   if (palette.id === newPalette.id) {
-    //     return newPalette;
-    //   }
-    //   return palette;
-    // });
-
-    // this.updateGame(Object.assign({}, this.state.game, { palettes: newPalettes }), 'Edited palette');
+    this.props.changePalette(newPalette);
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
@@ -444,28 +376,6 @@ class App extends React.Component<Props, State> {
     console.log(parsedGame);
 
     this.props.setGame(parsedGame);
-  }
-
-  updateGame(newGame: BitsyGame, action: string) {
-    // const compressed = pako.deflate(JSON.stringify(this.state.game));
-    // this.setState((prevState: State) => {
-    //   let newPrevGames = prevState.previousGames.slice();
-
-    //   if (prevState.previousGames.length >= MAX_UNDO_HISTORY) {
-    //     newPrevGames = newPrevGames.splice(1);
-    //   }
-
-    //   newPrevGames.push({
-    //     game: cloneDeep(prevState.game),
-    //     name: action,
-    //     timestamp: new Date(),
-    //   });
-
-    //   return {
-    //     game: newGame,
-    //     previousGames: newPrevGames,
-    //   };
-    // });
   }
 
   getCurrentPalette(): BitsyPalette | undefined {
@@ -661,6 +571,34 @@ class App extends React.Component<Props, State> {
                   marginBottom: '10px',
                 }}
               >
+                {this.props.undoStack.slice().reverse().map(action => {
+                  if ((action.action as Undoable).undoName) {
+                    const undoAction = (action.action as Undoable);
+                    return (
+                      <ListItem
+                        selected={false}
+                        key={action.timestamp.toString()}
+                        style={{
+                          padding: '0 10px',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+                          <div style={{ fontSize: '8pt', color: colours.fg1 }}>
+                            {action.timestamp.toLocaleTimeString()}
+                          </div>
+                          {undoAction.undoName}
+                        </div>
+                        {/* <ListItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
+                          <i className="fa fa-undo fa-lg" />
+                        </ListItemButton> */}
+                      </ListItem>
+                    );
+                  }
+
+                  return null;
+                })}
                 {/* {this.state.previousGames.slice().reverse().map((action, idx) => (
                   <ListItem
                     selected={idx === 0}
@@ -710,13 +648,32 @@ class App extends React.Component<Props, State> {
 
 const mapStateToProps = (state: StoreState): Partial<Props> => ({
   game: state.game,
+  undoStack: state.undoStack,
 });
 
 const mapDispatchToProps = (dispatch: Dispatch<StoreState>) => bindActionCreators(
   {
     setGame,
+    undo,
+
+    createTile,
+    changeTile,
+    deleteTile,
+
+    createSprite,
+    changeSprite,
+    deleteSprite,
+
+    createItem,
+    changeItem,
+    deleteItem,
+
     createRoom,
+    changeRoom,
+    deleteRoom,
     cloneRoom,
+
+    changePalette,
   },
   dispatch);
 

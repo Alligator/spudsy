@@ -47,6 +47,12 @@ class TileEditor extends React.PureComponent<Props, State> {
     this.renderCell = this.renderCell.bind(this);
   }
 
+  componentWillReceiveProps(nextProps: Props) {
+    if (this.props.tile && nextProps.tile && nextProps.tile.id !== this.props.tile.id) {
+      this.setState({ selectedFrame: 0 });
+    }
+  }
+
   get cellSize() {
     return this.props.size / this.props.tileCount;
   }

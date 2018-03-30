@@ -32,6 +32,7 @@ class ThingsEditor extends React.PureComponent<Props, {}> {
       <div>
         <TileList
           items={this.props.tiles}
+          keyPrefix="tile"
           bgColour={this.props.palette.bg}
           fgColour={this.props.palette.tile}
           selectedId={this.props.selectedTileId}
@@ -48,6 +49,7 @@ class ThingsEditor extends React.PureComponent<Props, {}> {
       <div>
         <TileList
           items={this.props.sprites}
+          keyPrefix="sprite"
           bgColour={this.props.palette.bg}
           fgColour={this.props.palette.sprite}
           selectedId={this.props.selectedSpriteId}
@@ -64,6 +66,7 @@ class ThingsEditor extends React.PureComponent<Props, {}> {
       <div>
         <TileList
           items={this.props.items}
+          keyPrefix="item"
           bgColour={this.props.palette.bg}
           fgColour={this.props.palette.sprite}
           selectedId={this.props.selectedItemId}

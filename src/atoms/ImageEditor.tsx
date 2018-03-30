@@ -28,6 +28,7 @@ type State = {
   mode: 'edit' | 'inspect',
 };
 
+// TODO: Batch editing (only save the edit on mouseup)
 class ImageEditor extends React.Component<Props, State> {
   public static defaultProps: Partial<Props> = {
     drawGrid: true,

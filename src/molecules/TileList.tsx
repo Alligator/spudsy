@@ -10,6 +10,7 @@ class TileFilterable extends Filterable<BitsyDrawable> { }
 
 type Props = {
   items: Array<BitsyDrawable>,
+  keyPrefix: string,
   fgColour: string,
   bgColour: string,
   handleClick: (tile: BitsyDrawable) => void,
@@ -39,7 +40,7 @@ const TileList = (props: Props) => {
         >
           {tiles.map((tile) => (
             <ListItem
-              key={tile.id}
+              key={`${props.keyPrefix} - ${tile.id}`}
               onClick={() => { props.handleClick(tile); }}
               selected={props.selectedId === tile.id}
               style={{ display: 'flex', paddingRight: '10px' }}
