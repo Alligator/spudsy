@@ -140,11 +140,6 @@ class App extends React.Component<Props, State> {
   }
 
   componentDidMount() {
-    const gameData = localStorage.getItem('bitsyGame');
-    if (gameData) {
-      this.parseGame(gameData);
-    }
-
     document.addEventListener('keydown', this.handleKeyDown);
     document.addEventListener('keyup', this.handleKeyUp);
 
@@ -353,9 +348,8 @@ class App extends React.Component<Props, State> {
   }
 
   handleEditGameData(evt: React.ChangeEvent<HTMLTextAreaElement>) {
-    const data = evt.target.value;
-    localStorage.setItem('bitsyGame', data);
-    this.parseGame(data);
+    const game = parseBitsy(evt.target.value);
+    this.props.setGame(game);
   }
 
   showDeletePrompt(title: string) {
@@ -369,13 +363,6 @@ class App extends React.Component<Props, State> {
         confirm: true,
       },
     });
-  }
-
-  parseGame(rawData: string) {
-    const parsedGame = parseBitsy(rawData);
-    console.log(parsedGame);
-
-    this.props.setGame(parsedGame);
   }
 
   getCurrentPalette(): BitsyPalette | undefined {
@@ -426,6 +413,11 @@ class App extends React.Component<Props, State> {
     const selectedRoom = this.props.game.rooms.filter(room => room.id === this.state.selectedRoomId)[0];
 
     const InfoSeparator = <div style={{ margin: '0 10px' }}>|</div>;
+
+    const undoHistory = this.props.undoStack
+      .filter(undoAction => undoAction.action)
+      .slice()
+      .reverse();
 
     const palette = this.getCurrentPalette();
     return (
@@ -571,13 +563,13 @@ class App extends React.Component<Props, State> {
                   marginBottom: '10px',
                 }}
               >
-                {this.props.undoStack.slice().reverse().map(action => {
-                  if ((action.action as Undoable).undoName) {
-                    const undoAction = (action.action as Undoable);
+                {undoHistory.map(undoItem => {
+                  if ((undoItem.action as Undoable).undoName) {
+                    const undoAction = (undoItem.action as Undoable);
                     return (
                       <ListItem
                         selected={false}
-                        key={action.timestamp.toString()}
+                        key={undoItem.id}
                         style={{
                           padding: '0 10px',
                           display: 'flex',
@@ -586,40 +578,19 @@ class App extends React.Component<Props, State> {
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
                           <div style={{ fontSize: '8pt', color: colours.fg1 }}>
-                            {action.timestamp.toLocaleTimeString()}
+                            {new Date(undoItem.timestamp).toLocaleTimeString()}
                           </div>
                           {undoAction.undoName}
                         </div>
-                        {/* <ListItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
+                        <ListItemButton title="Undo to here" onClick={() => this.props.undo(undoItem.id)}>
                           <i className="fa fa-undo fa-lg" />
-                        </ListItemButton> */}
+                        </ListItemButton>
                       </ListItem>
                     );
                   }
 
                   return null;
                 })}
-                {/* {this.state.previousGames.slice().reverse().map((action, idx) => (
-                  <ListItem
-                    selected={idx === 0}
-                    key={action.timestamp.toString()}
-                    style={{
-                      padding: '0 10px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-                      <div style={{ fontSize: '8pt', color: colours.fg1 }}>
-                        {action.timestamp.toLocaleTimeString()}
-                      </div>
-                      {action.name}
-                    </div>
-                    <ListItemButton title="Undo to here" onClick={() => this.handleUndo(idx)}>
-                      <i className="fa fa-undo fa-lg" />
-                    </ListItemButton>
-                  </ListItem>
-                ))} */}
               </div>
               <div style={{ color: colours.fg1, textAlign: 'right' }}>Ctrl+Z to undo</div>
             </Card>

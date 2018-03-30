@@ -10,19 +10,23 @@ import {
 } from './bitsy-parser';
 import { Reducer, AnyAction } from 'redux';
 import { cloneDeep } from 'lodash';
+import { INSPECT_MAX_BYTES } from 'buffer';
+import { saveGame } from './persist';
 
 export type StoreState = {
   game: BitsyGame,
   undoStack: Array<UndoAction>,
+  nextUndoId: number;
 };
 
 export type UndoAction = {
-  action: Actions | Undoable,
+  id: number;
+  action?: Actions | Undoable,
   game?: string,
-  timestamp: Date,
+  timestamp: number,
 };
 
-const initialState: StoreState = {
+export const initialState: StoreState = {
   game: {
     title: '',
     palettes: [],
@@ -35,6 +39,7 @@ const initialState: StoreState = {
     dialogs: [],
   },
   undoStack: [],
+  nextUndoId: 0,
 };
 
 // Actions
@@ -80,9 +85,10 @@ type Actions =
 
 export type Undoable = { undoName: string };
 
-type Undo = { type: actions.UNDO };
-export const undo = (): Undo => ({
+type Undo = { type: actions.UNDO, undoId: number };
+export const undo = (undoId: number): Undo => ({
   type: actions.UNDO,
+  undoId,
 });
 
 type SetGame = { type: actions.SET_GAME, game: BitsyGame };
@@ -360,31 +366,36 @@ export const reducer: Reducer<StoreState> = (state: StoreState = initialState, a
   if (action.type === actions.UNDO) {
 
     if (state.undoStack.length) {
+      // Find the undo and discord everything before that
       let undoStack = state.undoStack.slice();
-      const actionToUndo = undoStack.pop();
-      const finalUndoStack = undoStack.slice();
-      const actionsToReplay = [];
+      let currentUndo = undoStack.pop();
 
+      while (currentUndo && currentUndo.id !== action.undoId) {
+        currentUndo = undoStack.pop();
+      }
+
+      // Store the undo stack at this point, as this is the stack we want to
+      // persist but we're going to keep mutating the one we have to find the
+      // next full state.
+      const finalUndoStack = undoStack.slice();
+
+      const actionsToReplay = [];
       let foundGame: BitsyGame | null = null;
 
       while (!foundGame) {
         const nextAction = undoStack.pop();
 
-        if (nextAction) {
+        if (nextAction && nextAction.game) {
+          foundGame = JSON.parse(nextAction.game);
+        } else if (nextAction && nextAction.action) {
           actionsToReplay.unshift(nextAction.action);
-
-          if (nextAction.game) {
-            // Found a full game state
-            foundGame = JSON.parse(nextAction.game);
-          }
         } else {
-          // Uhh we ran out of stack without finding a game
-          throw new Error('Found no game state in the undo stack!');
+          throw new Error('No game state found in the undo stack!');
         }
       }
 
       const newState = actionsToReplay.reduce(
-        (nextState, nextAction) => runReducers(nextState, (<Actions> nextAction)),
+        (nextState, nextAction) => runReducers(nextState, (nextAction as Actions)),
         { ...state, game: foundGame },
       );
 
@@ -398,24 +409,36 @@ export const reducer: Reducer<StoreState> = (state: StoreState = initialState, a
   } else {
     const newState = runReducers(state, action);
 
-    if ((<Undoable> action).undoName) {
+    if ((action as Undoable).undoName) {
       const clonedAction = cloneDeep(action);
+      const timestamp = new Date().getTime();
 
       if (newState.undoStack.length === 0) {
-        // The stack is empty, push a full state to it
-        newState.undoStack = [{
-          action: clonedAction,
-          timestamp: new Date(),
-          game: JSON.stringify(state.game),
-        }];
+        // The stack is empty, push a full state to and then this action
+        newState.undoStack = [
+          {
+            timestamp,
+            game: JSON.stringify(state.game),
+            id: newState.nextUndoId++,
+          },
+          {
+            timestamp,
+            action: clonedAction,
+            id: newState.nextUndoId++,
+          },
+        ];
       } else {
         // The stack is not empty, clone the action and add it to the stack
         newState.undoStack.push({
-          timestamp: new Date(),
-          action: clonedAction
+          timestamp,
+          action: clonedAction,
+          id: newState.nextUndoId++,
         });
       }
     }
+
+    // this is garbage??
+    saveGame(newState);
 
     return newState;
   }

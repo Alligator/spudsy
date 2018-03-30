@@ -11,6 +11,7 @@
     "@types/tinycolor2": "^1.4.0",
     "emotion": "^9.0.2",
     "lodash": "^4.17.5",
+    "pako": "^1.0.6",
     "react": "^16.3.0",
     "react-color": "^2.14.0",
     "react-dom": "^16.2.0",
