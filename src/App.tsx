@@ -535,7 +535,8 @@ class App extends React.Component<Props, State> {
                   width: '256px',
                   height: '256px',
                 }}
-                value={this.state.rawGameData}
+                // TODO: My god no
+                // value={serializeBitsy(this.props.game).join('\n')}
                 onChange={this.handleEditGameData}
               />
               <Button

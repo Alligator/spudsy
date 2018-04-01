@@ -203,7 +203,7 @@ function updateGameState<T>(state: StoreState, property: string, newValue: T): S
 export const generalReducer: Reducer<StoreState> = (state: StoreState, action: Actions): StoreState => {
   switch (action.type) {
     case actions.SET_GAME: {
-      return { ...state, game: action.game };
+      return { ...state, game: action.game, undoStack: [] };
     }
     default:
       return state;
@@ -436,9 +436,6 @@ export const reducer: Reducer<StoreState> = (state: StoreState = initialState, a
         });
       }
     }
-
-    // this is garbage??
-    saveGame(newState);
 
     return newState;
   }
