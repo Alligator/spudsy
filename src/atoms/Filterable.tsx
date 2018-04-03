@@ -46,7 +46,7 @@ class Filterable<T> extends React.PureComponent<Props<T>, State> {
           type="text"
           onChange={this.handleInputChange}
           placeholder="search"
-          style={{ marginBottom: '10px', width: '100%' }}
+          style={{ margin: '10px 0 10px 0', width: '100%' }}
         />
         {this.props.render(filteredItems)}
       </div>

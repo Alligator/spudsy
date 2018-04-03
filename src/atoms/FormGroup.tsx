@@ -15,7 +15,7 @@ const FormGroup: React.StatelessComponent<Props> = (props) => {
         {
           display: 'flex',
           flexDirection: 'column',
-          marginRight: '10px'
+          margin: '10px 10px 10px 0',
         },
         props.style,
       )}

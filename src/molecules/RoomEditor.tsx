@@ -309,7 +309,7 @@ class RoomEditor extends React.PureComponent<Props, State> {
               handleInspect={this.handleInspect}
               getCellInfo={this.getCellInfo}
             />
-            <div style={{ display: 'flex', margin: '10px 0 20px 0', alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
               <FormGroup htmlFor="spudsy-room__name" label="Name">
                 <DebouncedInput
                   id="spudsy-room__name"
@@ -357,7 +357,6 @@ class RoomEditor extends React.PureComponent<Props, State> {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                marginTop: '5px',
                 maxHeight: '242px',
                 overflowY: 'auto'
               }}

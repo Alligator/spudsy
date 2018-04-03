@@ -66,13 +66,17 @@ enum actions {
   DELETE_ROOM = 'DELETE_ROOM',
   CLONE_ROOM = 'CLONE_ROOM',
 
+  CREATE_PALETTE = 'CREATE_PALETTE',
   CHANGE_PALETTE = 'CHANGE_PALETTE',
+  DELETE_PALETTE = 'DELETE_PALETTE',
+  CLONE_PALETTE = 'CLONE_PALETTE',
 }
 
 type TileActions = CreateTile | ChangeTile | DeleteTile;
 type SpriteActions = CreateSprite | ChangeSprite | DeleteSprite;
 type ItemActions = CreateItem | ChangeItem | DeleteItem;
 type RoomActions = CreateRoom | ChangeRoom | DeleteRoom | CloneRoom;
+type PaletteActions = CreatePalette | ChangePalette | DeletePalette | ClonePalette;
 
 type Actions =
   Undo
@@ -81,7 +85,7 @@ type Actions =
   | SpriteActions
   | ItemActions
   | RoomActions
-  | ChangePalette;
+  | PaletteActions;
 
 export type Undoable = { undoName: string };
 
@@ -184,11 +188,29 @@ export const cloneRoom = (roomId: number): CloneRoom => ({
   roomId,
 });
 
+type CreatePalette = Undoable & { type: actions.CREATE_PALETTE };
 type ChangePalette = Undoable & { type: actions.CHANGE_PALETTE, changedPalette: BitsyPalette };
+type DeletePalette = Undoable & { type: actions.DELETE_PALETTE, paletteId: number };
+type ClonePalette  = Undoable & { type: actions.CLONE_PALETTE, paletteId: number };
+
+export const createPalette = (): CreatePalette => ({
+  type: actions.CREATE_PALETTE,
+  undoName: 'Created palette',
+});
 export const changePalette = (changedPalette: BitsyPalette): ChangePalette => ({
   type: actions.CHANGE_PALETTE,
   undoName: 'Edited palette',
   changedPalette,
+});
+export const deletePalette = (paletteId: number): DeletePalette => ({
+  type: actions.DELETE_PALETTE,
+  undoName: 'Deleted palette',
+  paletteId,
+});
+export const clonePalette = (paletteId: number): ClonePalette => ({
+  type: actions.CLONE_PALETTE,
+  undoName: 'Cloned palette',
+  paletteId,
 });
 
 const nextId = (items: Array<BitsyThing>) => (1 + Math.max.apply(Math, items.map(item => item.id))) || 0;
@@ -330,9 +352,35 @@ const paletteReducer: Reducer<Array<BitsyPalette>> = (
   action: Actions,
 ): Array<BitsyPalette> => {
   switch (action.type) {
+    case actions.CREATE_PALETTE: {
+      const newPalette: BitsyPalette = {
+        id: nextId(palettes),
+        name: '',
+        bg: '',
+        sprite: '',
+        tile: '',
+      };
+      return [...palettes, newPalette];
+    }
+
     case actions.CHANGE_PALETTE: {
       return palettes.map(palette => palette.id === action.changedPalette.id ? action.changedPalette : palette);
     }
+
+    case actions.DELETE_PALETTE: {
+      return palettes.filter(palette => palette.id !== action.paletteId);
+    }
+
+    case actions.CLONE_PALETTE: {
+      const paletteToClone = palettes.filter(palette => palette.id === action.paletteId)[0];
+      if (paletteToClone) {
+        const newPalette = cloneDeep(paletteToClone);
+        newPalette.id = nextId(palettes);
+        return [...palettes, newPalette];
+      }
+      return palettes;
+    }
+
     default:
       return palettes;
   }

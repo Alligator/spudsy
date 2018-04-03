@@ -7,10 +7,16 @@ import { RGBColor } from 'react-color';
 import formatId from '../formatId';
 import ListItemButton from '../atoms/ListItemButton';
 import Tabs from '../atoms/Tabs';
+import { Button, DebouncedInput } from '../atoms/Inputs';
+import Filterable from '../atoms/Filterable';
+import FormGroup from '../atoms/FormGroup';
 
 type Props = {
   palettes: Array<BitsyPalette>,
+  handleAdd: () => void,
   handleChange: (palette: BitsyPalette) => void,
+  handleDelete: (palette: BitsyPalette) => void,
+  handleClone: (palette: BitsyPalette) => void,
 };
 
 type Colours = 'bg' | 'tile' | 'sprite';
@@ -19,7 +25,9 @@ type State = {
   selectedPaletteId?: number,
 };
 
-const SquareColourBlock = styled<{ colour: string }, 'div'>('div')`
+class PaletteFilterable extends Filterable<BitsyPalette> { }
+
+const SquareColourBlock = styled<{ colour: string }, 'div'>('div') `
   height: 32px;
   width: 10px;
   background-color: ${(props) => props.colour};
@@ -32,6 +40,7 @@ class PaletteEditor extends React.PureComponent<Props, State> {
     this.state = {};
 
     this.handleColourChange = this.handleColourChange.bind(this);
+    this.handleEditName = this.handleEditName.bind(this);
   }
 
   handleColourChange(selectedColour: string, colour: RGBColor) {
@@ -46,7 +55,12 @@ class PaletteEditor extends React.PureComponent<Props, State> {
     this.props.handleChange(newPalette);
   }
 
-  // TODO: Why is this jumping back after you select a colour?
+  handleEditName(value: string) {
+    const selectedPalette = this.props.palettes.filter(palette => palette.id === this.state.selectedPaletteId)[0];
+    const newPalette = Object.assign({}, selectedPalette, { name: value });
+    this.props.handleChange(newPalette);
+  }
+
   render() {
     const sortedPalettes = this.props.palettes.slice().sort((a, b) => {
       const aName = formatId(a);
@@ -59,47 +73,78 @@ class PaletteEditor extends React.PureComponent<Props, State> {
     return (
       <div>
         {selectedPalette &&
-          <Tabs
-            tabs={['Background', 'Tile', 'Sprite']}
-            renderTab={(tabName) => {
-              const mapping = {
-                'Background': 'bg',
-                'Tile': 'tile',
-                'Sprite': 'sprite',
-              };
-              return (
-                <div style={{ marginBottom: '10px' }}>
+          <React.Fragment>
+            <Tabs
+              tabs={['Background', 'Tile', 'Sprite']}
+              renderTab={(tabName) => {
+                const mapping = {
+                  'Background': 'bg',
+                  'Tile': 'tile',
+                  'Sprite': 'sprite',
+                };
+                return (
                   <ColourPicker
                     colour={selectedPalette[mapping[tabName]]}
                     handleChange={(colour) => this.handleColourChange(mapping[tabName], colour)}
                   />
-                </div>
-              );
-            }}
-          />
+                );
+              }}
+            />
+            <FormGroup htmlFor="spudsy-palette__name" label="Name">
+              <DebouncedInput
+                id="spudsy-palette__name"
+                type="text"
+                value={selectedPalette.name}
+                placeholder={selectedPalette.id.toString()}
+                onValueChange={this.handleEditName}
+              />
+            </FormGroup>
+          </React.Fragment>
         }
-        <div>
-          {sortedPalettes.map((palette) => (
-            <ListItem
-              key={palette.id}
-              selected={selectedPalette ? palette.id === selectedPalette.id : false}
-              style={{ justifyContent: 'space-between', paddingRight: '10px' }}
-              onClick={() => { this.setState({ selectedPaletteId: palette.id }); }}
-            >
-              <div style={{ display: 'flex' }}>
-                <SquareColourBlock colour={palette.bg} />
-                <SquareColourBlock colour={palette.tile} />
-                <SquareColourBlock colour={palette.sprite} />
-              </div>
-              <div style={{ marginLeft: '10px', flexGrow: 1 }}>{formatId(palette)}</div>
-              <ListItemButton
-                onClick={() => null}
-                title="Delete room"
+        <div
+          style={{
+            height: '242px',
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+          }}
+        >
+          <PaletteFilterable
+            items={sortedPalettes}
+            getKey={formatId}
+            render={palettes => palettes.map(palette => (
+              <ListItem
+                key={palette.id}
+                selected={selectedPalette ? palette.id === selectedPalette.id : false}
+                style={{ justifyContent: 'space-between', paddingRight: '10px' }}
+                onClick={() => { this.setState({ selectedPaletteId: palette.id }); }}
               >
-                <i className="fas fa-trash-alt fa-lg" />
-              </ListItemButton>
-            </ListItem>
-          ))}
+                <div style={{ display: 'flex' }}>
+                  <SquareColourBlock colour={palette.bg} />
+                  <SquareColourBlock colour={palette.tile} />
+                  <SquareColourBlock colour={palette.sprite} />
+                </div>
+                <div style={{ marginLeft: '10px', flexGrow: 1 }}>{formatId(palette)}</div>
+                <ListItemButton
+                  onClick={() => this.props.handleClone(palette)}
+                  title="Clone palette`"
+                >
+                  <i className="fas fa-clone fa-lg" />
+                </ListItemButton>
+                <ListItemButton
+                  onClick={() => this.props.handleDelete(palette)}
+                  title="Delete palette"
+                >
+                  <i className="fas fa-trash-alt fa-lg" />
+                </ListItemButton>
+              </ListItem>
+            ))}
+          />
+        </div>
+        <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+          <Button onClick={this.props.handleAdd}>
+            Add new palette
+          </Button>
         </div>
       </div>
     );

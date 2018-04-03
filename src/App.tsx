@@ -48,6 +48,9 @@ import {
   undo,
   UndoAction,
   Undoable,
+  createPalette,
+  deletePalette,
+  clonePalette,
 } from './state';
 import { bindActionCreators } from 'redux';
 
@@ -83,7 +86,10 @@ type Props = {
   deleteRoom: typeof deleteRoom,
   cloneRoom: typeof cloneRoom,
 
+  createPalette: typeof createPalette,
   changePalette: typeof changePalette,
+  deletePalette: typeof deletePalette,
+  clonePalette: typeof clonePalette,
 };
 
 type State = {
@@ -524,6 +530,9 @@ class App extends React.Component<Props, State> {
               <PaletteEditor
                 palettes={game.palettes}
                 handleChange={this.handleEditPalette}
+                handleAdd={this.props.createPalette}
+                handleDelete={paletteToDelete => this.props.deletePalette(paletteToDelete.id)}
+                handleClone={paletteToClone => this.props.clonePalette(paletteToClone.id)}
               />
             </Card>
           </VerticalContainer>
@@ -645,7 +654,10 @@ const mapDispatchToProps = (dispatch: Dispatch<StoreState>) => bindActionCreator
     deleteRoom,
     cloneRoom,
 
+    createPalette,
     changePalette,
+    deletePalette,
+    clonePalette,
   },
   dispatch);
 
